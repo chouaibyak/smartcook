@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
+import 'profile_screen.dart';
+import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -11,6 +13,8 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   bool agree = false;
+  bool isLoading = false;
+
   final Color green = const Color(0xFF0B5D3B);
 
   final firstNameController = TextEditingController();
@@ -19,59 +23,57 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
 
+  void validateRegister() async {
+    final firstName = firstNameController.text.trim();
+    final lastName = lastNameController.text.trim();
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+    final confirmPassword = confirmPasswordController.text;
 
-bool isLoading = false;
-void validateRegister() async {
-  final firstName = firstNameController.text.trim();
-  final lastName = lastNameController.text.trim();
-  final email = emailController.text.trim();
-  final password = passwordController.text;
-  final confirmPassword = confirmPasswordController.text;
+    if (firstName.isEmpty ||
+        lastName.isEmpty ||
+        email.isEmpty ||
+        password.isEmpty ||
+        confirmPassword.isEmpty) {
+      showMessage("Please fill in all fields");
+      return;
+    }
 
-  if (firstName.isEmpty ||
-      lastName.isEmpty ||
-      email.isEmpty ||
-      password.isEmpty ||
-      confirmPassword.isEmpty) {
-    showMessage("Please fill in all fields");
-    return;
+    if (!email.contains("@") || !email.contains(".")) {
+      showMessage("Please enter a valid email address");
+      return;
+    }
+
+    if (password.length < 6) {
+      showMessage("Password must be at least 6 characters");
+      return;
+    }
+
+    if (password != confirmPassword) {
+      showMessage("Passwords do not match");
+      return;
+    }
+
+    if (!agree) {
+      showMessage("Please accept the Terms and Privacy Policy");
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    setState(() => isLoading = false);
+
+    showMessage("Account created successfully ✅");
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const InitialProfileScreen(),
+      ),
+    );
   }
-
-  if (!email.contains("@") || !email.contains(".")) {
-    showMessage("Please enter a valid email address");
-    return;
-  }
-
-  if (password.length < 6) {
-    showMessage("Password must be at least 6 characters");
-    return;
-  }
-
-  if (password != confirmPassword) {
-    showMessage("Passwords do not match");
-    return;
-  }
-
-  if (!agree) {
-    showMessage("Please accept the Terms and Privacy Policy");
-    return;
-  }
-
-  setState(() {
-    isLoading = true;
-  });
-
-  await Future.delayed(const Duration(seconds: 1));
-
-  setState(() {
-    isLoading = false;
-  });
-
-  // TODO: call backend API here later
-  showMessage("Account created successfully ✅");
-
-  // TODO: navigate to InitialProfileScreen later
-}
 
   void showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -90,6 +92,24 @@ void validateRegister() async {
     passwordController.dispose();
     confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  Widget socialButton(String text) {
+    return Expanded(
+      child: Container(
+        height: 58,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFB5C3B8)),
+        ),
+        child: Center(
+          child: Text(
+            text,
+            style: const TextStyle(fontSize: 19),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -121,17 +141,22 @@ void validateRegister() async {
                   size: 34,
                 ),
               ),
+
               const SizedBox(height: 22),
+
               const Text(
                 "SmartCook",
                 style: TextStyle(fontSize: 25, fontWeight: FontWeight.w500),
               ),
+
               const SizedBox(height: 12),
+
               const Text(
                 "Your intelligent sous-chef awaits.",
                 style: TextStyle(fontSize: 20, color: Color(0xFF1F2A24)),
                 textAlign: TextAlign.center,
               ),
+
               const SizedBox(height: 45),
 
               Container(
@@ -231,10 +256,10 @@ void validateRegister() async {
                     const SizedBox(height: 25),
 
                     CustomButton(
-  text: "Register",
-  isLoading: isLoading,
-  onPressed: validateRegister,
-),
+                      text: "Register",
+                      isLoading: isLoading,
+                      onPressed: validateRegister,
+                    ),
 
                     const SizedBox(height: 35),
 
@@ -269,19 +294,29 @@ void validateRegister() async {
                     const SizedBox(height: 35),
 
                     Center(
-                      child: Text.rich(
-                        TextSpan(
-                          text: "Already have an account? ",
-                          style: const TextStyle(fontSize: 18),
-                          children: [
-                            TextSpan(
-                              text: "Log in",
-                              style: TextStyle(
-                                color: green,
-                                fontWeight: FontWeight.bold,
-                              ),
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginScreen(),
                             ),
-                          ],
+                          );
+                        },
+                        child: Text.rich(
+                          TextSpan(
+                            text: "Already have an account? ",
+                            style: const TextStyle(fontSize: 18),
+                            children: [
+                              TextSpan(
+                                text: "Log in",
+                                style: TextStyle(
+                                  color: green,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -297,24 +332,6 @@ void validateRegister() async {
                 style: TextStyle(color: Colors.grey, fontSize: 14),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget socialButton(String text) {
-    return Expanded(
-      child: Container(
-        height: 58,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFB5C3B8)),
-        ),
-        child: Center(
-          child: Text(
-            text,
-            style: const TextStyle(fontSize: 19),
           ),
         ),
       ),

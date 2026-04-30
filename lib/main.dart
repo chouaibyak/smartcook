@@ -2,18 +2,17 @@ import 'package:flutter/material.dart';
 import 'screens/register_screen.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const SmartCookApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class SmartCookApp extends StatelessWidget {
+  const SmartCookApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false, 
-      title: 'SmartCook',
-      home: const RegisterScreen(),
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: RegisterScreen(),
     );
   }
 }
