@@ -3,6 +3,7 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import 'initial_profile_screen.dart';
 import 'login_screen.dart';
+import '../services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -61,18 +62,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => isLoading = true);
 
-    await Future.delayed(const Duration(seconds: 1));
+     // Appel au backend
+    final result = await AuthService.register(
+      "${firstNameController.text} ${lastNameController.text}",
+      emailController.text.trim(),
+      passwordController.text,
+    );
 
     setState(() => isLoading = false);
 
-    showMessage("Account created successfully ✅");
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const InitialProfileScreen(),
-      ),
-    );
+    if (result != null && result.containsKey('token')) {
+      showMessage("Account created successfully ✅");
+      
+      // On passe le TOKEN à l'écran suivant
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => InitialProfileScreen(token: result['token']),
+        ),
+      );
+    } else {
+      showMessage(result?['message'] ?? "Registration failed");
+    }
   }
 
   void showMessage(String message) {
@@ -114,6 +125,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print("REGISTER SCREEN BUILD");
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAF8),
       body: SafeArea(
@@ -327,7 +339,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 35),
 
               const Text(
-                "© 2024 SmartCook AI Technologies. All rights\nreserved.",
+                "© 2026 SmartCook AI Technologies. All rights\nreserved.",
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.grey, fontSize: 14),
               ),
