@@ -1,24 +1,22 @@
-const db = require('../config/db');
+const Profile = require('../models/Profile');
 
 exports.updateInitialProfile = async (req, res) => {
-    const { taille, poids, objectif, allergies, sante, diet } = req.body;
-    const userId = req.userId; // Récupéré via authMiddleware
-
+    // req.userId est injecté par ton authMiddleware (le vérificateur de token)
+    const userId = req.userId; 
+    
     try {
-        // Sauvegarde dans la table profilutilisateur
-        // On utilise ON DUPLICATE KEY car idUtilisateur est la clé primaire
-        await db.execute(
-            `INSERT INTO profilutilisateur (idUtilisateur, taille, poids, objectifNutritionnel, allergies, conditionsSante, preferencesAlimentaires) 
-             VALUES (?, ?, ?, ?, ?, ?, ?)
-             ON DUPLICATE KEY UPDATE taille=?, poids=?, objectifNutritionnel=?, allergies=?, conditionsSante=?, preferencesAlimentaires=?`,
-            [
-                userId, taille, poids, objectif, JSON.stringify(allergies), JSON.stringify(sante), JSON.stringify(diet),
-                taille, poids, objectif, JSON.stringify(allergies), JSON.stringify(sante), JSON.stringify(diet)
-            ]
-        );
+        // On passe les données du corps de la requête au modèle
+        await Profile.updateByUserId(userId, req.body);
 
-        res.status(200).json({ message: "Profil complété avec succès !" });
+        res.status(200).json({ 
+            success: true,
+            message: "Profil complété avec succès !" 
+        });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error("Update Profile Error:", error);
+        res.status(500).json({ 
+            success: false,
+            error: "Erreur lors de la mise à jour du profil" 
+        });
     }
 };
