@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
+import 'home_screen.dart';
 
 class InitialProfileScreen extends StatefulWidget {
-  const InitialProfileScreen({super.key});
+  final String token;
+  
+  const InitialProfileScreen({Key? key, required this.token}) : super(key: key);
 
   @override
   State<InitialProfileScreen> createState() => _InitialProfileScreenState();
@@ -36,12 +40,34 @@ class _InitialProfileScreenState extends State<InitialProfileScreen> {
     });
   }
 
-  void continueToApp() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Profile saved locally ✅")),
-    );
+  void continueToApp() async {
+    final profileData = {
+      "taille": double.tryParse(heightController.text),
+      "poids": double.tryParse(weightController.text),
+      "objectif": selectedGoal,
+      "allergies": selectedAllergies,
+      "sante": selectedHealth,
+      "diet": selectedDiet,
+    };
 
-    // TODO: later call backend API for profilutilisateur table
+    // Appel au service avec le token reçu du constructeur
+    bool success = await AuthService.completeProfile(widget.token, profileData);
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Profile saved on server")),
+      );
+
+      Navigator.pushReplacement(
+        context, 
+        MaterialPageRoute(builder: (context) => HomeScreen())
+        );
+    
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error saving profile"), backgroundColor: Colors.red),
+      );
+    }
   }
 
   @override

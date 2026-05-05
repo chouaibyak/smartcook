@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import 'register_screen.dart';
+import '../services/auth_service.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -45,13 +47,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => isLoading = true);
 
-    await Future.delayed(const Duration(seconds: 1));
+    //Appel backend
+    final result = await AuthService.login(email, password);
 
     setState(() => isLoading = false);
 
-    showMessage("Login success ✅");
+    if (result != null && result.containsKey('token')) {
+      showMessage("Login success Welcome ${result['user']?['nom'] ?? ''}");
+    } else {
+      showMessage(result?['message'] ?? "Login failed");
+    }
 
-    // TODO: navigate to HomeScreen later
+     Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
+    );
   }
 
   @override
