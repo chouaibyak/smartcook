@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-import '../providers/ingredient_provider.dart';
 import '../models/ingredient_model.dart';
+import '../providers/ingredient_provider.dart';
 import 'add_ingredient_screen.dart';
 
 class InventoryPage extends StatefulWidget {

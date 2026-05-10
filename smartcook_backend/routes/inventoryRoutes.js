@@ -5,7 +5,7 @@ const inventoryController = require('../controllers/inventoryController');
 
 router.use(authMiddleware);
 
-router.get('/:id', inventoryController.getIngredientById);
+router.get('/', inventoryController.getAllIngredients);
 router.post('/', inventoryController.addIngredient);
 router.put('/:id', inventoryController.updateIngredient);
 router.delete('/:id', inventoryController.deleteIngredient);

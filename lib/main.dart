@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'screens/register_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/ingredient_provider.dart';  
+import 'providers/recipe_provider.dart';
 
 void main() {
   runApp(const SmartCookApp());
@@ -18,6 +19,8 @@ class SmartCookApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => IngredientProvider()),  
+            ChangeNotifierProvider(create: (_) => RecipeProvider()),
+
       ],
       child: const MaterialApp(
         debugShowCheckedModeBanner: false,
