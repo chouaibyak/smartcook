@@ -1,3 +1,5 @@
+import 'package:shared_preferences/shared_preferences.dart';
+import '../services/ingredient_service.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../services/ingredient_service.dart';
@@ -47,8 +49,9 @@ class _ScanPageState extends State<ScanPage> {
   // Appelé automatiquement par MobileScanner à chaque lecture
   // On arrête la caméra puis on appelle OpenFoodFacts
   void _onBarcodeDetected(BarcodeCapture capture) async {
+    print("BARCODE DETECTED: ${capture.barcodes.length} barcodes");
     final barcode = capture.barcodes.firstOrNull;
-
+    print("BARCODE VALUE: ${barcode?.rawValue}");
     // Si aucun barcode détecté ou valeur vide, on ignore
     if (barcode == null || barcode.rawValue == null) return;
     // Si on est déjà en train de chercher ou qu'on a déjà un résultat, on ignore
@@ -431,14 +434,30 @@ class _ScanPageState extends State<ScanPage> {
         child: ElevatedButton.icon(
           // Bouton désactivé (gris) si pas encore de résultat
           onPressed: _hasResult
-              ? () {
-                  // Affiche une confirmation à l'utilisateur
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Produit ajouté à l\'inventaire !'),
-                    ),
-                  );
-                  // Remet la page à zéro pour un nouveau scan
+              ? () async {
+                  // Récupérer le token depuis le storage
+                  final prefs = await SharedPreferences.getInstance();
+                  final token = prefs.getString('token') ?? '';
+
+                  // Envoyer le produit scanné à l'inventaire
+                  final success = await IngredientService.addItem(token, {
+                    'nom': _productName,
+                    'quantite': _productQty.isNotEmpty ? _productQty : '1',
+                  });
+
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Produit ajouté à l\'inventaire !'),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Erreur lors de l\'ajout !'),
+                      ),
+                    );
+                  }
                   _reset();
                 }
               : null,
