@@ -3,11 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:smartcook/providers/ingredient_provider.dart';
 import 'package:smartcook/services/api_service.dart';
 import '../widgets/custom_app_bar.dart';
-import '../widgets/custom_bottom_nav_bar.dart';
 import 'dart:async';
 
 class AddIngredientScreen extends StatefulWidget {
-  const AddIngredientScreen({super.key});
+  final VoidCallback? onSave;
+  const AddIngredientScreen({super.key, this.onSave});
 
   @override
   State<AddIngredientScreen> createState() => _AddIngredientScreenState();
@@ -92,7 +92,11 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Ingrédient ajouté avec succès !"), backgroundColor: Colors.green)
       );
-      Navigator.pop(context);
+      if (widget.onSave != null) {
+        widget.onSave!();
+      }else{
+          Navigator.pop(context);
+      }
     }else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Erreur lors de la sauvegarde"), backgroundColor: Colors.red)
@@ -143,7 +147,6 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
     final nutriProvider = Provider.of<IngredientProvider>(context);
     return Scaffold(
       backgroundColor: bgColor,
-      appBar: const CustomAppBar(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
         child: Column(

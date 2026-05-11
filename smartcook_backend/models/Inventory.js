@@ -4,9 +4,10 @@ class Inventory {
 
   static async findByUserId(userId) {
     try {
+      const cleanId = parseInt(typeof userId === 'object' ? userId.id : userId);
       const [rows] = await db.query(
         'SELECT id FROM inventaire WHERE idUtilisateur = ?',
-        [userId]
+        [cleanId]
       );
 
       return rows[0] || null;
@@ -19,9 +20,10 @@ class Inventory {
 
   static async create(userId) {
     try {
+      const cleanId = parseInt(typeof userId === 'object' ? userId.id : userId);
       const [result] = await db.query(
         'INSERT INTO inventaire (idUtilisateur) VALUES (?)',
-        [userId]
+        [cleanId]
       );
 
       return result.insertId;
@@ -34,7 +36,9 @@ class Inventory {
 
   static async getOrCreate(userId) {
     try {
-      let inventory = await this.findByUserId(userId);
+      const cleanId = parseInt(userId);
+      if (isNaN(cleanId)) throw new Error("ID Utilisateur invalide");
+      let inventory = await this.findByUserId(cleanId);
 
       if (!inventory) {
         const id = await this.create(userId);

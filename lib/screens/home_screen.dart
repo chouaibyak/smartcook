@@ -52,12 +52,17 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     pages = [
-      HomePage(result: widget.result),
+      HomePage(
+        result: widget.result,
+        onNavigate: (index) => onTabTapped(index) 
+        ),
       const InventoryPage(),
       const BarcodeScanScreen(),
       const AiScanScreen(),
       const RecipesPage(),
       const ListPage(),
+      AddIngredientScreen(onSave: () => onTabTapped(1))
+
     ];
   }
 
@@ -83,8 +88,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class HomePage extends StatelessWidget {
   final Map<String, dynamic>? result;
+  final Function(int) onNavigate;
 
-  const HomePage({super.key, this.result});
+  const HomePage({super.key, this.result, required this.onNavigate});
 
   static const Color primaryGreen = Color(0xFF2D6A4F);
   static const Color textDark = Color(0xFF333333);
@@ -181,14 +187,7 @@ class HomePage extends StatelessWidget {
                 child: QuickActionButton(
                   title: "Add ingredient",
                   icon: Icons.add_circle_outline,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const AddIngredientScreen(),
-                      ),
-                    );
-                  },
+                  onTap: () => onNavigate(6),
                 ),
               ),
 

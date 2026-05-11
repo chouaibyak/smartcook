@@ -1,14 +1,27 @@
 const Aliment = require('../models/Aliment');
 
+
+const getUserId = (req) => {
+    const id = req.userId || (req.user ? req.user.id : null);
+    if (!id) return null; // Ne pas retourner 1 !
+    return parseInt(id);
+};
+
 exports.getAllIngredients = async (req, res) => {
   try {
-    const ingredients = await Aliment.findAllByUser(req.userId);
+    const userId = getUserId(req); // On récupère l'ID numérique
+    console.log("Récupération des ingrédients pour l'user ID :", userId);
+
+    // On appelle la méthode du modèle Aliment
+    const ingredients = await Aliment.findAllByUser(userId);
+    
     res.json(ingredients);
   } catch (error) {
-    console.error("GET INGREDIENTS ERROR:", error);
-    res.status(500).json({ message: 'Erreur serveur' });
+    console.error("ERREUR GET ALL INGREDIENTS:", error);
+    res.status(500).json({ message: 'Erreur serveur lors de la récupération' });
   }
-};
+}
+
 
 exports.addIngredient = async (req, res) => {
   try {
@@ -20,7 +33,8 @@ exports.addIngredient = async (req, res) => {
       });
     }
 
-    const id = await Aliment.create(req.userId, req.body);
+    const userId = parseInt(req.userId);
+    const id = await Aliment.create(userId, req.body);
 
     res.status(201).json({
       message: 'Aliment ajouté avec succès',
@@ -35,13 +49,16 @@ exports.addIngredient = async (req, res) => {
 exports.updateIngredient = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = getUserId(req);
 
-    const belongsToUser = await Aliment.belongsToUser(id, req.userId);
+    if (!userId) return res.status(401).json({ message: 'Non autorisé' });
+    const belongsToUser = await Aliment.belongsToUser(id, userId);
     if (!belongsToUser) {
-      return res.status(404).json({ message: 'Aliment non trouvé' });
+      return res.status(403).json({ message: 'Cet aliment ne vous appartient pas' });
     }
 
-    const updated = await Aliment.update(id, req.userId, req.body);
+
+    const updated = await Aliment.update(id, userId, req.body);
 
     if (updated) {
       res.json({ message: 'Aliment mis à jour avec succès' });

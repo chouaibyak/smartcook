@@ -1,6 +1,14 @@
 const Aliment = require('../models/Aliment');
 const nutritionService = require('../services/nutritionService');
 
+
+// Utilitaire pour extraire l'ID utilisateur
+const getUserId = (req) => {
+    const id = req.userId || (req.user ? req.user.id : null);
+    if (!id) return null; // Ne pas retourner 1 !
+    return parseInt(id);
+};
+
 exports.getNutritionInfo = async (req, res) => {
   try {
     const { name } = req.query;
@@ -34,6 +42,13 @@ exports.getNutritionInfo = async (req, res) => {
 exports.saveAliment = async (req, res) => {
   try {
     const data = req.body;
+    const userId = parseInt(req.userId);
+
+    console.log("DEBUG: Tentative de sauvegarde pour User ID :", userId);
+
+    if (!userId || isNaN(userId)) {
+        return res.status(401).json({ error: "Utilisateur non authentifié (ID invalide)" });
+    }
     
     // Validation minimale
     if (!data.nom) {
@@ -41,11 +56,11 @@ exports.saveAliment = async (req, res) => {
     }
 
     // Utilisation de await au lieu du callback
-    const result = await Aliment.create(data);
+    const newId = await Aliment.create(userId, data);
     
     res.status(201).json({ 
       message: "Ingrédient sauvegardé !", 
-      id: result.insertId 
+      id: newId 
     });
 
   } catch (error) {

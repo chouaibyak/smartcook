@@ -2,6 +2,48 @@ const db = require('../config/db');
 const Inventory = require('./Inventory');
 
 class Aliment {
+ 
+  
+  static async create(userId, data) {
+    try {
+      // 1. Récupérer ou créer l'inventaire lié à l'utilisateur
+      const inventory = await Inventory.getOrCreate(userId);
+
+      const query = `INSERT INTO aliment 
+        (idInventaire, nom, quantite, unite, type, dateExpiration, 
+         calories, proteines, glucides, lipides, allergenes, 
+         marque, categorie, imageUrl, statut) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+      const values = [
+        inventory.id, // On utilise l'ID trouvé juste au-dessus
+        data.nom || 'Inconnu',
+        data.quantite || 1,
+        data.unite || 'pcs',
+        data.type || 'autre',
+        data.dateExpiration || null,
+        data.calories || 0,
+        data.proteines || 0,
+        data.glucides || 0,
+        data.lipides || 0,
+        data.allergenes || 'Aucun',
+        data.marque || 'Générique',
+        data.categorie || 'Inconnu',
+        data.imageUrl || '',
+        data.statut || 'disponible'
+      ];
+
+      // On utilise await (db doit être configuré avec .promise())
+      const [result] = await db.query(query, values);
+      
+      return result.insertId; // Retourne l'ID de l'aliment créé
+
+    } catch (error) {
+      console.error('Erreur dans Aliment.create:', error.message);
+      throw error;
+    }
+  }
+
   // Récupérer tous les aliments d'un utilisateur
   static async findAllByUser(userId) {
     try {
@@ -13,15 +55,14 @@ class Aliment {
          ORDER BY a.dateExpiration ASC`,
         [userId]
       );
-      // ✅ Toujours retourner un tableau, même vide
       return rows || [];
     } catch (error) {
       console.error('Erreur findAllByUser:', error);
-      return []; // Retourner tableau vide en cas d'erreur
+      return [];
     }
   }
 
-  // Récupérer un aliment par son ID
+  // Récupérer un aliment par ID
   static async findById(id, userId) {
     try {
       const [rows] = await db.query(
@@ -38,70 +79,33 @@ class Aliment {
     }
   }
 
-  // Ajouter un aliment
-  static async create(userId, data) {
-    try {
-      // Récupérer ou créer l'inventaire
-      const inventory = await Inventory.getOrCreate(userId);
-      
-      const {
-        nom,
-        quantite,
-        unite,
-        type,
-        dateExpiration,
-        calories,
-        proteines,
-        glucides,
-        lipides,
-        barcode,
-        imageUrl
-      } = data;
-
-      const [result] = await db.query(
-        `INSERT INTO aliment 
-         (idInventaire, nom, quantite, unite, type, dateExpiration, 
-          calories, proteines, glucides, lipides, barcode, imageUrl, statut)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [inventory.id, nom, quantite, unite, type, dateExpiration,
-         calories || null, proteines || null, glucides || null, lipides || null, 
-         barcode || null, imageUrl || null, 'disponible']
-      );
-
-      return result.insertId;
-    } catch (error) {
-      console.error('Erreur create:', error);
-      throw error;
-    }
-  }
-
-  // Mettre à jour un aliment
+  // Modifier un aliment
   static async update(id, userId, data) {
     try {
       const {
-        nom,
-        quantite,
-        unite,
-        type,
-        dateExpiration,
-        calories,
-        proteines,
-        glucides,
-        lipides
+        nom, quantite, unite, type, dateExpiration,
+        calories, proteines, glucides, lipides,
+        allergenes, marque, categorie, barcode, imageUrl, statut
       } = data;
 
       const [result] = await db.query(
         `UPDATE aliment a
          JOIN inventaire i ON a.idInventaire = i.id
-         SET a.nom = ?, a.quantite = ?, a.unite = ?, a.type = ?,
-             a.dateExpiration = ?, a.calories = ?, a.proteines = ?,
-             a.glucides = ?, a.lipides = ?
+         SET
+           a.nom = ?, a.quantite = ?, a.unite = ?, a.type = ?,
+           a.dateExpiration = ?, a.calories = ?, a.proteines = ?,
+           a.glucides = ?, a.lipides = ?, a.allergenes = ?,
+           a.marque = ?, a.categorie = ?, a.barcode = ?,
+           a.imageUrl = ?, a.statut = ?
          WHERE a.id = ? AND i.idUtilisateur = ?`,
-        [nom, quantite, unite, type, dateExpiration,
-         calories || null, proteines || null, glucides || null, lipides || null, 
-         id, userId]
+        [
+          nom, quantite, unite, type, dateExpiration,
+          calories || 0, proteines || 0, glucides || 0, lipides || 0,
+          allergenes || 'Aucun', marque || 'Générique', categorie || 'Inconnu',
+          barcode || null, imageUrl || '', statut || 'disponible',
+          id, userId
+        ]
       );
-
       return result.affectedRows > 0;
     } catch (error) {
       console.error('Erreur update:', error);
@@ -118,7 +122,6 @@ class Aliment {
          WHERE a.id = ? AND i.idUtilisateur = ?`,
         [id, userId]
       );
-
       return result.affectedRows > 0;
     } catch (error) {
       console.error('Erreur delete:', error);
@@ -126,12 +129,11 @@ class Aliment {
     }
   }
 
-  // Vérifier si l'aliment appartient à l'utilisateur
+  // Vérifier appartenance utilisateur
   static async belongsToUser(id, userId) {
     try {
       const [rows] = await db.query(
-        `SELECT a.id 
-         FROM aliment a
+        `SELECT a.id FROM aliment a
          JOIN inventaire i ON a.idInventaire = i.id
          WHERE a.id = ? AND i.idUtilisateur = ?`,
         [id, userId]
