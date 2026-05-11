@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import 'register_screen.dart';
 import '../services/auth_service.dart';
+import '../services/ingredient_service.dart';
+import '../providers/ingredient_provider.dart';
 import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -22,11 +25,11 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isLoading = false;
   bool obscurePassword = true;
 
-  void showMessage(String message) {
+  void showMessage(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: green,
+        backgroundColor: isError ? Colors.red : green,
       ),
     );
   }
@@ -36,32 +39,42 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      showMessage("Please fill in all fields");
+      showMessage("Please fill in all fields", isError: true);
       return;
     }
 
     if (!email.contains("@") || !email.contains(".")) {
-      showMessage("Please enter a valid email address");
+      showMessage("Please enter a valid email address", isError: true);
       return;
     }
 
     setState(() => isLoading = true);
 
-    //Appel backend
+    // Appel backend
     final result = await AuthService.login(email, password);
 
     setState(() => isLoading = false);
 
     if (result != null && result.containsKey('token')) {
-      showMessage("Login success Welcome ${result['user']?['nom'] ?? ''}");
+      final token = result['token'];
+      
+      print(' Token reçu: $token');
+      
+      final ingredientService = IngredientService();
+      ingredientService.setToken(token);
+      
+      // Optionnel: Stocker aussi dans le Provider si nécessaire
+      // (mais le service est suffisant pour l'instant)
+      
+      showMessage("Login success! Welcome ${result['user']?['nom'] ?? ''}");
+      
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen(result : result )),
+      );
     } else {
-      showMessage(result?['message'] ?? "Login failed");
+      showMessage(result?['message'] ?? "Login failed", isError: true);
     }
-
-     Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const HomeScreen()),
-    );
   }
 
   @override
