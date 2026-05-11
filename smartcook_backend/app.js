@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
+const inventoryRoutes = require('./routes/inventoryRoutes'); 
 const alimentRoutes = require('./routes/alimentRoutes');
 
 const app = express();
@@ -25,6 +26,7 @@ app.use((req, res, next) => {
 
 // 3. Routes API
 app.use('/api/auth', authRoutes);
+app.use('/api/inventory', inventoryRoutes); 
 app.use('/api/user', userRoutes);
 app.use('/api/aliments', alimentRoutes);
 
@@ -32,7 +34,7 @@ app.get('/', (req, res) => {
     res.send("SmartCook API is running...");
 });
 
-// 4. Gestion des erreurs (Middleware final)
+// 4. Gestion des erreurs
 app.use((err, req, res, next) => {
     console.error("SERVER ERROR:", err);
     res.status(500).json({
@@ -41,5 +43,4 @@ app.use((err, req, res, next) => {
     });
 });
 
-// IMPORTANT : On exporte l'app pour server.js
 module.exports = app;
