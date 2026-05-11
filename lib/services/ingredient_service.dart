@@ -26,15 +26,27 @@ class IngredientService {
   // Ajouter un item à l'inventaire
   static Future<bool> addItem(String token, Map<String, dynamic> item) async {
     try {
+      // On transforme les clés pour correspondre au Backend Node.js
+      final Map<String, dynamic> backendData = {
+        "nom": item['name'], // 'name' devient 'nom'
+        "quantite": item['quantity'] ?? 1,
+        "unite": item['unit'] ?? 'pcs',
+        "date_expiration": null, // Optionnel selon ton controller
+      };
+
+      print("DEBUG: Envoi au backend -> $backendData");
+
       final response = await http.post(
         Uri.parse(ApiConstants.inventory),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-        body: jsonEncode(item),
+        body: jsonEncode(backendData),
       );
-      return response.statusCode == 201;
+
+      print("DEBUG: Status Code -> ${response.statusCode}");
+      return response.statusCode == 201 || response.statusCode == 200;
     } catch (e) {
       print("ADD ITEM ERROR: $e");
       return false;

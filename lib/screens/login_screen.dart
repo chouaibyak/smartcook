@@ -4,6 +4,7 @@ import '../widgets/custom_button.dart';
 import 'register_screen.dart';
 import '../services/auth_service.dart';
 import 'home_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,12 +24,9 @@ class _LoginScreenState extends State<LoginScreen> {
   bool obscurePassword = true;
 
   void showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: green,
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: green));
   }
 
   void validateLogin() async {
@@ -53,12 +51,15 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => isLoading = false);
 
     if (result != null && result.containsKey('token')) {
+      // Sauvegarder le token dans SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', result['token']);
       showMessage("Login success Welcome ${result['user']?['nom'] ?? ''}");
     } else {
       showMessage(result?['message'] ?? "Login failed");
     }
 
-     Navigator.pushReplacement(
+    Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => const HomeScreen()),
     );
@@ -84,10 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             Icon(icon, size: 22),
             const SizedBox(width: 10),
-            Text(
-              text,
-              style: const TextStyle(fontSize: 18),
-            ),
+            Text(text, style: const TextStyle(fontSize: 18)),
           ],
         ),
       ),
@@ -180,10 +178,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        "Password",
-                        style: TextStyle(fontSize: 19),
-                      ),
+                      const Text("Password", style: TextStyle(fontSize: 19)),
                       Text(
                         "Forgot?",
                         style: TextStyle(
@@ -225,16 +220,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFB5C3B8),
-                        ),
+                        borderSide: const BorderSide(color: Color(0xFFB5C3B8)),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(
-                          color: green,
-                          width: 1.5,
-                        ),
+                        borderSide: BorderSide(color: green, width: 1.5),
                       ),
                     ),
                   ),

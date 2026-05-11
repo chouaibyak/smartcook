@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthProvider with ChangeNotifier {
   String? _token;
@@ -7,13 +8,25 @@ class AuthProvider with ChangeNotifier {
 
   bool get isAuth => _token != null;
 
-  void login(String token) {
+  // Sauvegarder le token en mémoire ET dans SharedPreferences
+  void login(String token) async {
     _token = token;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', token);
     notifyListeners();
   }
 
-  void logout() {
+  // Charger le token depuis SharedPreferences au démarrage
+  Future<void> loadToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    _token = prefs.getString('token');
+    notifyListeners();
+  }
+
+  void logout() async {
     _token = null;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
     notifyListeners();
   }
 }

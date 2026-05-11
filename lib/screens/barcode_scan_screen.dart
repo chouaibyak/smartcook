@@ -435,30 +435,39 @@ class _ScanPageState extends State<ScanPage> {
           // Bouton désactivé (gris) si pas encore de résultat
           onPressed: _hasResult
               ? () async {
-                  // Récupérer le token depuis le storage
                   final prefs = await SharedPreferences.getInstance();
                   final token = prefs.getString('token') ?? '';
+                  print("TOKEN: $token");
+                  // Ici, on utilise les noms de variables de ton écran
+                  // Le service s'occupera de transformer 'name' en 'nom'
+                  final Map<String, dynamic> itemData = {
+                    'name': _productName,
+                    'quantity': 1, // On met 1 par défaut
+                    'unit':
+                        _productQty, // On passe la quantité brute (ex: "500g")
+                  };
 
-                  // Envoyer le produit scanné à l'inventaire
-                  final success = await IngredientService.addItem(token, {
-                    'nom': _productName,
-                    'quantite': _productQty.isNotEmpty ? _productQty : '1',
-                  });
+                  final success = await IngredientService.addItem(
+                    token,
+                    itemData,
+                  );
 
                   if (success) {
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Produit ajouté à l\'inventaire !'),
+                        content: Text('✅ Ajouté à l\'inventaire !'),
                       ),
                     );
+                    _reset();
                   } else {
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Erreur lors de l\'ajout !'),
+                        content: Text('❌ Erreur lors de l\'ajout'),
                       ),
                     );
                   }
-                  _reset();
                 }
               : null,
           icon: const Icon(Icons.check_circle_outline, color: Colors.white),
