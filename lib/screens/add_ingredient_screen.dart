@@ -30,12 +30,16 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
    // Valeurs nutritionnelles récupérées de l'IA
   double _calories = 0, _proteins = 0, _carbs = 0, _fats = 0;
 
- @override
-  void initState() {
-    super.initState();
-    // Ecouter les changements du nom pour l'analyse IA
-    _nameController.addListener(_onNameChanged);
-  }
+ 
+
+  @override
+void initState() {
+  super.initState();
+
+  print("INIT STATE RUNNING");
+
+  _nameController.addListener(_onNameChanged);
+}
 
   void _onNameChanged() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
@@ -56,6 +60,8 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
     setState(() => _isLoadingAI = true);
     try {
       final data = await ApiService().analyzeIngredient(name);
+
+        print(data);
       setState(() {
         _calories = (data['calories'] as num).toDouble();
         _proteins = (data['proteines'] as num).toDouble();
@@ -71,7 +77,15 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
   Future<void> _handleSave() async {
     final nutri = Provider.of<IngredientProvider>(context, listen: false);
     final data = {
-      "idInventaire": 1, // À dynamiser selon l'utilisateur connecté
+
+      //  ANCIEN CODE
+//"idInventaire": 1,
+
+// NEW CODE
+// supprimé car backend utilise maintenant
+// req.userId depuis le JWT token
+
+
       "nom": _nameController.text,
       "quantite": double.tryParse(_qtyController.text) ?? 0,
       "unite": _selectedUnit,

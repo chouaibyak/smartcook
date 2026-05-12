@@ -23,7 +23,6 @@ class HomeScreen extends StatefulWidget {
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
-
 class _HomeScreenState extends State<HomeScreen> {
   int currentIndex = 0;
 
@@ -33,41 +32,85 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
 
+    // Exécute le chargement des ingrédients
+    // après l'initialisation complète du widget
     Future.microtask(() async {
-      // Exécute fetchIngredients() après l’initialisation complète du widget
-      // pour éviter les erreurs liées au context/Provider dans initState()
+
+      // Récupération du provider des ingrédients
       final ingredientProvider = Provider.of<IngredientProvider>(
         context,
         listen: false,
       );
 
+      // Récupération du provider des recettes
       final recipeProvider = Provider.of<RecipeProvider>(
         context,
         listen: false,
       );
 
+      // Charger les ingrédients depuis l'API/backend
       await ingredientProvider.fetchIngredients();
 
-      recipeProvider.generateSuggestions(ingredientProvider.ingredients);
+      // Générer les suggestions de recettes
+      // selon les ingrédients disponibles
+      recipeProvider.generateSuggestions(
+        ingredientProvider.ingredients,
+      );
     });
 
+    // Liste des pages utilisées dans IndexedStack
     pages = [
-      HomePage(
-        result: widget.result,
-        onNavigate: (index) => onTabTapped(index) 
-        ),
-      const InventoryPage(),
-      const BarcodeScanScreen(),
-      const AiScanScreen(),
-      const RecipesPage(),
-      const ListPage(),
-      AddIngredientScreen(onSave: () => onTabTapped(1))
 
+      // Index 0 → Home
+      HomePage(
+
+        // Données utilisateur reçues après login
+        result: widget.result,
+
+        // Fonction permettant de changer d'onglet
+        onNavigate: (index) => onTabTapped(index),
+      ),
+
+      // Index 1 → Inventory
+      const InventoryPage(),
+
+      // Index 2 → Barcode Scanner
+      const BarcodeScanScreen(),
+
+      // Index 3 → AI Scan
+      const AiScanScreen(),
+
+      // Index 4 → Recipes
+      const RecipesPage(),
+
+      // Index 5 → Shopping List
+      const ListPage(),
+
+      // Index 6 → Add Ingredient
+      AddIngredientScreen(
+
+        // Callback exécuté après sauvegarde
+        onSave: () async {
+
+          // Recharge les ingrédients
+          // pour mettre à jour Inventory automatiquement
+          await Provider.of<IngredientProvider>(
+            context,
+            listen: false,
+          ).fetchIngredients();
+
+          // Retour automatique vers Inventory
+          onTabTapped(1);
+        },
+      ),
     ];
   }
 
+  // Fonction utilisée pour changer la page affichée
   void onTabTapped(int index) {
     setState(() {
+
+      // Met à jour l'index courant
       currentIndex = index;
     });
   }
@@ -75,9 +118,21 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
+      // Couleur de fond générale
       backgroundColor: const Color(0xFFF8F9FA),
+
+      // AppBar personnalisée
       appBar: const CustomAppBar(),
-      body: IndexedStack(index: currentIndex, children: pages),
+
+      // IndexedStack garde les pages en mémoire
+      // contrairement à Navigator.push
+      body: IndexedStack(
+        index: currentIndex,
+        children: pages,
+      ),
+
+      // Bottom navigation bar
       bottomNavigationBar: CustomBottomNav(
         currentIndex: currentIndex,
         onTap: onTabTapped,
@@ -85,7 +140,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-
 class HomePage extends StatelessWidget {
   final Map<String, dynamic>? result;
   final Function(int) onNavigate;

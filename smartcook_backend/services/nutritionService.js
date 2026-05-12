@@ -25,10 +25,10 @@ exports.analyzeIngredient = async (name) => {
       const nutriments = product.nutriments || {};
 
       return {
-        calories: Math.round(nutriments['energy-kcal_100g'] || 0),
-        proteines: nutriments.proteins_100g || 0,
-        glucides: nutriments.carbohydrates_100g || 0,
-        lipides: nutriments.fat_100g || 0,
+      calories: Math.round(nutriments['energy-kcal_100g'] || 0),
+      proteines: Number((nutriments.proteins_100g || 0).toFixed(1)),
+      glucides: Number((nutriments.carbohydrates_100g || 0).toFixed(1)),
+      lipides: Number((nutriments.fat_100g || 0).toFixed(1)),
         categorie: product.categories ? product.categories.split(',')[0] : "Inconnu",
         marque: product.brands ? product.brands.split(',')[0] : "Inconnu",
         imageUrl: product.image_front_url || ""

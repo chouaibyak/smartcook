@@ -3,9 +3,19 @@ import '../services/auth_service.dart';
 import 'home_screen.dart';
 
 class InitialProfileScreen extends StatefulWidget {
-  final String token;
-  
-  const InitialProfileScreen({Key? key, required this.token}) : super(key: key);
+final String token;
+
+//  : données user/login
+final Map<String, dynamic>? result;
+
+const InitialProfileScreen({
+  Key? key,
+  required this.token,
+  this.result,
+}) : super(key: key);
+
+
+
 
   @override
   State<InitialProfileScreen> createState() => _InitialProfileScreenState();
@@ -60,7 +70,9 @@ class _InitialProfileScreenState extends State<InitialProfileScreen> {
 
       Navigator.pushReplacement(
         context, 
-        MaterialPageRoute(builder: (context) => HomeScreen())
+        MaterialPageRoute(builder: (context) =>HomeScreen(
+  result: widget.result,
+))
         );
     
     } else {

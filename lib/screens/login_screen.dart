@@ -7,6 +7,8 @@ import '../services/auth_service.dart';
 import '../services/ingredient_service.dart';
 import '../providers/ingredient_provider.dart';
 import 'home_screen.dart';
+import '../services/api_service.dart';
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -58,13 +60,34 @@ class _LoginScreenState extends State<LoginScreen> {
     if (result != null && result.containsKey('token')) {
       final token = result['token'];
       
-      print(' Token reçu: $token');
+    
       
-      final ingredientService = IngredientService();
-      ingredientService.setToken(token);
       
-      // Optionnel: Stocker aussi dans le Provider si nécessaire
-      // (mais le service est suffisant pour l'instant)
+
+      print("LOGIN RESULT: $result");
+print("USER FROM LOGIN: ${result['user']}");
+print("TOKEN FROM LOGIN: ${result['token']}");
+
+  final ingredientService = IngredientService();
+  ingredientService.setToken(token);
+
+  //  CHANGEMENT 2 : création dyal ApiService
+  final apiService = ApiService();
+
+  //  CHANGEMENT 3 : stockage dyal token f ApiService
+  // bach les autres requêtes API yقدرو يستعملو نفس token
+  apiService.setToken(token);
+      
+
+      final ingredientProvider = Provider.of<IngredientProvider>(
+  context,
+  listen: false,
+);
+
+ingredientProvider.clearData();
+
+await ingredientProvider.fetchIngredients();
+     
       
       showMessage("Login success! Welcome ${result['user']?['nom'] ?? ''}");
       

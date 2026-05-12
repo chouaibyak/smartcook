@@ -22,6 +22,24 @@ class IngredientProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  void clearData() {
+  _ingredients = [];
+  _isLoading = false;
+  _errorMessage = null;
+
+  calories = 0;
+  proteins = 0;
+  carbs = 0;
+  fats = 0;
+
+  category = "";
+  allergens = "";
+  brand = "";
+  imageUrl = "";
+
+  notifyListeners();
+}
+
   Future<void> fetchNutrition(String name) async {
     _isLoading = true;
     notifyListeners();

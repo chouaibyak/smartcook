@@ -4,6 +4,10 @@ import '../widgets/custom_button.dart';
 import 'initial_profile_screen.dart';
 import 'login_screen.dart';
 import '../services/auth_service.dart';
+import '../services/api_service.dart';
+import '../services/ingredient_service.dart';
+import '../providers/ingredient_provider.dart';
+import 'package:provider/provider.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -71,17 +75,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => isLoading = false);
 
-    if (result != null && result.containsKey('token')) {
-      showMessage("Account created successfully ✅");
-      
-      // On passe le TOKEN à l'écran suivant
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => InitialProfileScreen(token: result['token']),
-        ),
-      );
-    } else {
+   if (result != null && result.containsKey('token')) {
+
+  final token = result['token'];
+
+  //  sauvegarde du token
+  IngredientService().setToken(token);
+  ApiService().setToken(token);
+
+  //  reset anciennes données
+  final ingredientProvider = Provider.of<IngredientProvider>(
+    context,
+    listen: false,
+  );
+
+  ingredientProvider.clearData();
+
+  //  recharge données new user
+  await ingredientProvider.fetchIngredients();
+
+  showMessage("Account created successfully ✅");
+
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(
+      builder: (context) => InitialProfileScreen(
+  token: token,
+  result: result,
+)
+    ),
+  );
+} else {
       showMessage(result?['message'] ?? "Registration failed");
     }
   }
