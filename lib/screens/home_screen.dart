@@ -23,10 +23,10 @@ class HomeScreen extends StatefulWidget {
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
+
 class _HomeScreenState extends State<HomeScreen> {
   int currentIndex = 0;
 
-  late final List<Widget> pages;
 
   @override
   void initState() {
@@ -35,7 +35,6 @@ class _HomeScreenState extends State<HomeScreen> {
     // Exécute le chargement des ingrédients
     // après l'initialisation complète du widget
     Future.microtask(() async {
-
       // Récupération du provider des ingrédients
       final ingredientProvider = Provider.of<IngredientProvider>(
         context,
@@ -53,93 +52,85 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Générer les suggestions de recettes
       // selon les ingrédients disponibles
-      recipeProvider.generateSuggestions(
-        ingredientProvider.ingredients,
-      );
+      recipeProvider.generateSuggestions(ingredientProvider.ingredients);
     });
 
     // Liste des pages utilisées dans IndexedStack
-    pages = [
+    final pages = [
+      HomePage(result: widget.result, onNavigate: onTabTapped),
 
-      // Index 0 → Home
-      HomePage(
+      const InventoryPage(), // 1
+      const BarcodeScanScreen(), // 2
+      const RecipesPage(), // 3
+      const ListPage(), // 4
 
-        // Données utilisateur reçues après login
-        result: widget.result,
-
-        // Fonction permettant de changer d'onglet
-        onNavigate: (index) => onTabTapped(index),
-      ),
-
-      // Index 1 → Inventory
-      const InventoryPage(),
-
-      // Index 2 → Barcode Scanner
-      const BarcodeScanScreen(),
-
-      // Index 3 → AI Scan
-      const AiScanScreen(),
-
-      // Index 4 → Recipes
-      const RecipesPage(),
-
-      // Index 5 → Shopping List
-      const ListPage(),
-
-      // Index 6 → Add Ingredient
       AddIngredientScreen(
-
-        // Callback exécuté après sauvegarde
+        // 5
         onSave: () async {
-
-          // Recharge les ingrédients
-          // pour mettre à jour Inventory automatiquement
           await Provider.of<IngredientProvider>(
             context,
             listen: false,
           ).fetchIngredients();
 
-          // Retour automatique vers Inventory
           onTabTapped(1);
         },
       ),
+
+      const AiScanScreen(), // 6
     ];
   }
 
   // Fonction utilisée pour changer la page affichée
   void onTabTapped(int index) {
     setState(() {
-
       // Met à jour l'index courant
       currentIndex = index;
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+ @override
+Widget build(BuildContext context) {
+  final pages = [
+    HomePage(
+      result: widget.result,
+      onNavigate: onTabTapped,
+    ),
+    const InventoryPage(),
+    const BarcodeScanScreen(),
+    const RecipesPage(),
+    const ListPage(),
 
-      // Couleur de fond générale
-      backgroundColor: const Color(0xFFF8F9FA),
+    AddIngredientScreen(
+      onSave: () async {
+        await Provider.of<IngredientProvider>(
+          context,
+          listen: false,
+        ).fetchIngredients();
 
-      // AppBar personnalisée
-      appBar: const CustomAppBar(),
+        onTabTapped(1);
+      },
+    ),
 
-      // IndexedStack garde les pages en mémoire
-      // contrairement à Navigator.push
-      body: IndexedStack(
-        index: currentIndex,
-        children: pages,
-      ),
+    const AiScanScreen(),
+  ];
 
-      // Bottom navigation bar
-      bottomNavigationBar: CustomBottomNav(
-        currentIndex: currentIndex,
-        onTap: onTabTapped,
-      ),
-    );
-  }
+  final bottomNavIndex = currentIndex <= 4 ? currentIndex : 0;
+
+  return Scaffold(
+    backgroundColor: const Color(0xFFF8F9FA),
+    appBar: const CustomAppBar(),
+    body: IndexedStack(
+      index: currentIndex,
+      children: pages,
+    ),
+    bottomNavigationBar: CustomBottomNav(
+      currentIndex: bottomNavIndex,
+      onTap: onTabTapped,
+    ),
+  );
 }
+}
+
 class HomePage extends StatelessWidget {
   final Map<String, dynamic>? result;
   final Function(int) onNavigate;
@@ -241,7 +232,7 @@ class HomePage extends StatelessWidget {
                 child: QuickActionButton(
                   title: "Add ingredient",
                   icon: Icons.add_circle_outline,
-                  onTap: () => onNavigate(6),
+                  onTap: () => onNavigate(5),
                 ),
               ),
 
@@ -251,14 +242,7 @@ class HomePage extends StatelessWidget {
                 child: QuickActionButton(
                   title: "Scan barcode",
                   icon: Icons.qr_code_scanner,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const BarcodeScanScreen(),
-                      ),
-                    );
-                  },
+                  onTap: () => onNavigate(2),
                 ),
               ),
             ],
@@ -270,12 +254,7 @@ class HomePage extends StatelessWidget {
             title: "AI Scan Fridge",
             icon: Icons.auto_awesome,
             isLarge: true,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AiScanScreen()),
-              );
-            },
+            onTap: () => onNavigate(6),
           ),
 
           const SizedBox(height: 16),
@@ -286,12 +265,7 @@ class HomePage extends StatelessWidget {
                 child: QuickActionButton(
                   title: "Generate recipe",
                   icon: Icons.restaurant_menu,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const RecipesPage()),
-                    );
-                  },
+                  onTap: () => onNavigate(3),
                 ),
               ),
 
@@ -301,12 +275,7 @@ class HomePage extends StatelessWidget {
                 child: QuickActionButton(
                   title: "Shopping list",
                   icon: Icons.list_alt,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ListPage()),
-                    );
-                  },
+                  onTap: () => onNavigate(4),
                 ),
               ),
             ],

@@ -44,21 +44,40 @@ class Ingredient {
     return 'Disponible';
   }
 
+  static int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  static double _toDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  static DateTime _parseDate(dynamic value) {
+    final parsed = DateTime.tryParse(value?.toString() ?? '');
+    return parsed ?? DateTime.now().add(const Duration(days: 365));
+  }
+
   factory Ingredient.fromJson(Map<String, dynamic> json) {
     return Ingredient(
-      id: json['id'],
-      idInventaire: json['idInventaire'],
-      nom: json['nom'],
-      quantite: json['quantite']?.toDouble() ?? 0,
+      id: _toInt(json['id']),
+      idInventaire: json['idInventaire'] == null
+          ? null
+          : _toInt(json['idInventaire']),
+      nom: json['nom']?.toString() ?? '',
+      quantite: _toDouble(json['quantite']),
       unite: json['unite'] ?? '',
       type: json['type'] ?? '',
-      dateExpiration: DateTime.parse(json['dateExpiration']),
-      calories: json['calories']?.toDouble(),
-      proteines: json['proteines']?.toDouble(),
-      glucides: json['glucides']?.toDouble(),
-      lipides: json['lipides']?.toDouble(),
-      barcode: json['barcode'],
-      imageUrl: json['imageUrl'],
+      dateExpiration: _parseDate(json['dateExpiration']),
+      calories: json['calories'] == null ? null : _toDouble(json['calories']),
+      proteines:
+          json['proteines'] == null ? null : _toDouble(json['proteines']),
+      glucides: json['glucides'] == null ? null : _toDouble(json['glucides']),
+      lipides: json['lipides'] == null ? null : _toDouble(json['lipides']),
+      barcode: json['barcode']?.toString(),
+      imageUrl: json['imageUrl']?.toString(),
       statut: json['statut'] ?? 'disponible',
     );
   }

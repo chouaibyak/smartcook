@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:smartcook/models/ingredient_model.dart';
 import 'package:smartcook/providers/ingredient_provider.dart';
-import 'package:smartcook/services/api_service.dart';
 import '../widgets/custom_app_bar.dart';
 import 'dart:async';
 
@@ -59,14 +59,14 @@ void initState() {
   Future<void> _fetchNutritionAI(String name) async {
     setState(() => _isLoadingAI = true);
     try {
-      final data = await ApiService().analyzeIngredient(name);
+      final provider = Provider.of<IngredientProvider>(context, listen: false);
+      await provider.fetchNutrition(name);
 
-        print(data);
       setState(() {
-        _calories = (data['calories'] as num).toDouble();
-        _proteins = (data['proteines'] as num).toDouble();
-        _carbs = (data['glucides'] as num).toDouble();
-        _fats = (data['lipides'] as num).toDouble();
+        _calories = provider.calories;
+        _proteins = provider.proteins;
+        _carbs = provider.carbs;
+        _fats = provider.fats;
       });
     } finally {
       setState(() => _isLoadingAI = false);
@@ -76,32 +76,22 @@ void initState() {
 
   Future<void> _handleSave() async {
     final nutri = Provider.of<IngredientProvider>(context, listen: false);
-    final data = {
+    final ingredient = Ingredient(
+      id: 0,
+      nom: _nameController.text.trim(),
+      quantite: double.tryParse(_qtyController.text) ?? 0,
+      unite: _selectedUnit,
+      type: _selectedType,
+      dateExpiration:
+          DateTime.tryParse(_expiryController.text) ?? DateTime.now(),
+      calories: nutri.calories,
+      proteines: nutri.proteins,
+      glucides: nutri.carbs,
+      lipides: nutri.fats,
+      imageUrl: nutri.imageUrl,
+    );
 
-      //  ANCIEN CODE
-//"idInventaire": 1,
-
-// NEW CODE
-// supprimé car backend utilise maintenant
-// req.userId depuis le JWT token
-
-
-      "nom": _nameController.text,
-      "quantite": double.tryParse(_qtyController.text) ?? 0,
-      "unite": _selectedUnit,
-      "type": _selectedType,
-      "dateExpiration": _expiryController.text,
-      "calories": nutri.calories,
-      "proteines": nutri.proteins,
-      "glucides": nutri.carbs,
-      "lipides": nutri.fats,
-      "allergenes": nutri.allergens, 
-      "marque": nutri.brand,         
-      "categorie": nutri.category,   
-      "imageUrl": nutri.imageUrl,     
-    };
-
-    bool success = await ApiService().saveIngredient(data);
+    bool success = await nutri.addIngredient(ingredient);
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Ingrédient ajouté avec succès !"), backgroundColor: Colors.green)

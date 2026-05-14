@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../utils/api_constants.dart';
 
 class ApiService {
-  static const String baseUrl = "http://localhost:3000/api/aliments";
-
   // SINGLETON
   static final ApiService _instance = ApiService._internal();
 
@@ -28,7 +27,7 @@ class ApiService {
 
   Future<Map<String, dynamic>> analyzeIngredient(String name) async {
     final response = await http.get(
-      Uri.parse('$baseUrl/analyze?name=$name'),
+      Uri.parse('${ApiConstants.aliments}/analyze?name=$name'),
       headers: _headers(),
     );
 
@@ -51,7 +50,7 @@ class ApiService {
     print("HEADERS: ${_headers()}");
 
     final response = await http.post(
-      Uri.parse('$baseUrl/add'),
+      Uri.parse(ApiConstants.inventory),
       headers: _headers(),
       body: json.encode(data),
     );
