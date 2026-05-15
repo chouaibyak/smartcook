@@ -4,6 +4,7 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes'); 
 const alimentRoutes = require('./routes/alimentRoutes');
+const recipeRoutes = require('./routes/recipeRoutes');
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/inventory', inventoryRoutes); 
 app.use('/api/user', userRoutes);
 app.use('/api/aliments', alimentRoutes);
+app.use('/api', recipeRoutes); 
 
 app.get('/', (req, res) => {
     res.send("SmartCook API is running...");

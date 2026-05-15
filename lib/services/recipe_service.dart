@@ -1,122 +1,54 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../models/recipe_model.dart';
-import '../models/ingredient_model.dart';
-import 'image_service.dart';
 
 class RecipeService {
+  final String baseUrl = "http://localhost:3000/api";
 
-  List<Recipe> generateSuggestedRecipes(
-    List<Ingredient> ingredients,
-  ) {
-
-    final ingredientNames = ingredients
-        .map((ingredient) => ingredient.nom.toLowerCase())
-        .toList();
-
-    List<Recipe> recipes = [];
-
-    // Pasta Recipe
-    if (
-        ingredientNames.contains('pasta') ||
-        ingredientNames.contains('tomato')
-    ) {
-
-      recipes.add(
-        Recipe(
-          id: 1,
-          idUtilisateur: 1,
-          nom: "Tomato Pasta",
-          typeRepas: "Dinner",
-          tempsPreparation: 20,
-          difficulte: "Easy",
-          nbPersonnes: 2,
-
-          etapes:
-              "Boil pasta. Prepare tomato sauce. Mix together and serve.",
-
-          calories: 450,
-          proteines: 12,
-          glucides: 65,
-          lipides: 10,
-
-          benefices:
-              "Rich in carbohydrates and energy for daily activities.",
-
-          conseilsSante:
-              "Use whole wheat pasta for a healthier meal.",
-
-          scoreCompatibilite: 92,
-        ),
-      );
-    }
-
-    // Chicken Recipe
-    if (ingredientNames.contains('chicken')) {
-
-      recipes.add(
-        Recipe(
-          id: 2,
-          idUtilisateur: 1,
-          nom: "Chicken Salad",
-          typeRepas: "Lunch",
-          tempsPreparation: 15,
-          difficulte: "Easy",
-          nbPersonnes: 1,
-
-          etapes:
-              "Cook chicken. Mix vegetables. Add dressing and serve.",
-
-          calories: 320,
-          proteines: 28,
-          glucides: 12,
-          lipides: 14,
-
-          benefices:
-              "High protein meal supporting muscle recovery.",
-
-          conseilsSante:
-              "Add olive oil and fresh vegetables for better nutrition.",
-
-          scoreCompatibilite: 88,
-        ),
-      );
-    }
-
-    // Default Recipe
-    if (recipes.isEmpty) {
-
-      recipes.add(
-        Recipe(
-          id: 0,
-          idUtilisateur: 1,
-          nom: "Simple Homemade Meal",
-          typeRepas: "Any",
-          tempsPreparation: 10,
-          difficulte: "Easy",
-          nbPersonnes: 1,
-
-          etapes:
-              "Use available ingredients to create a simple healthy meal.",
-
-          calories: 250,
-          proteines: 8,
-          glucides: 30,
-          lipides: 8,
-
-          benefices:
-              "Balanced quick meal with available ingredients.",
-
-          conseilsSante:
-              "Add more ingredients to unlock better recipe suggestions.",
-
-          scoreCompatibilite: 50,
-        ),
-      );
-    }
-
-    return recipes;
+  Map<String, String> _headers(String token) {
+    return {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    };
   }
 
-  String getRecipeImage(String recipeName) {
-    return ImageService.getMealDbImage(recipeName);
+  Future<List<Recipe>> getRecipes(String token) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/recipes'),
+      headers: _headers(token),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> body = jsonDecode(response.body);
+      return body.map((item) => Recipe.fromJson(item)).toList();
+    }
+
+    throw Exception("Erreur lors du chargement des recettes: ${response.body}");
+  }
+
+  Future<void> refreshAiRecipes(String token) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/recipes/refresh'),
+      headers: _headers(token),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        "L'IA n'a pas pu generer de nouvelles recettes: ${response.body}",
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>> getProfile(String token) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/user/profile'),
+      headers: _headers(token),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+
+    throw Exception("Erreur lors du chargement du profil: ${response.body}");
   }
 }

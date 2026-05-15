@@ -49,13 +49,16 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 
       // Charger les ingrédients depuis l'API/backend
+      final token = widget.result?['token']?.toString();
+      if (token != null && token.isNotEmpty) {
+        recipeProvider.setToken(token);
+      }
+
       await ingredientProvider.fetchIngredients();
 
       // Générer les suggestions de recettes
       // selon les ingrédients disponibles
-      recipeProvider.generateSuggestions(
-        ingredientProvider.ingredients,
-      );
+      await recipeProvider.loadData(token);
     });
 
     // Liste des pages utilisées dans IndexedStack
@@ -78,10 +81,10 @@ class _HomeScreenState extends State<HomeScreen> {
       const BarcodeScanScreen(),
 
       // Index 3 → AI Scan
-      const AiScanScreen(),
+      //const AiScanScreen(),
 
       // Index 4 → Recipes
-      const RecipesPage(),
+      RecipesPage(token: widget.result?['token']?.toString()),
 
       // Index 5 → Shopping List
       const ListPage(),
@@ -241,7 +244,7 @@ class HomePage extends StatelessWidget {
                 child: QuickActionButton(
                   title: "Add ingredient",
                   icon: Icons.add_circle_outline,
-                  onTap: () => onNavigate(6),
+                  onTap: () => onNavigate(5),
                 ),
               ),
 
@@ -289,7 +292,11 @@ class HomePage extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const RecipesPage()),
+                      MaterialPageRoute(
+                        builder: (_) => RecipesPage(
+                          token: result?['token']?.toString(),
+                        ),
+                      ),
                     );
                   },
                 ),
@@ -329,11 +336,15 @@ class HomePage extends StatelessWidget {
               subtitle: suggestedRecipe.benefices,
               badge:
                   "${suggestedRecipe.difficulte} • ${suggestedRecipe.tempsPreparation} min",
-              imageUrl: recipeProvider.getRecipeImage(suggestedRecipe.nom),
+              imageUrl: suggestedRecipe.imageUrl,
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const RecipesPage()),
+                  MaterialPageRoute(
+                    builder: (_) => RecipesPage(
+                      token: result?['token']?.toString(),
+                    ),
+                  ),
                 );
               },
             ),
