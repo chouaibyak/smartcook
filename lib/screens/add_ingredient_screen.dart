@@ -49,18 +49,20 @@ void initState() {
       return;
     }
 
-    _debounce = Timer(const Duration(milliseconds: 800), () {
+    _debounce = Timer(const Duration(milliseconds: 1500), () {
       // Appelle le provider
       Provider.of<IngredientProvider>(context, listen: false)
-          .fetchNutrition(_nameController.text);
+.fetchNutrition(_nameController.text, _selectedType);
     });
   }
 
   Future<void> _fetchNutritionAI(String name) async {
     setState(() => _isLoadingAI = true);
     try {
-      final data = await ApiService().analyzeIngredient(name);
-
+final data = await ApiService().analyzeIngredient(
+  name,
+  _selectedType,
+);
         print(data);
       setState(() {
         _calories = (data['calories'] as num).toDouble();
@@ -76,6 +78,7 @@ void initState() {
 
   Future<void> _handleSave() async {
     final nutri = Provider.of<IngredientProvider>(context, listen: false);
+
     final data = {
 
       //  ANCIEN CODE
@@ -206,10 +209,38 @@ void initState() {
 
                   _buildLabel("Ingredient Type"),
                   _buildDropdown(
-                    ['Vegetables', 'Fruits', 'Meat', 'Dairy', 'Grains', 'Spices'],
+                   [
+  'Vegetables',
+  'Fruits',
+  'Meat',
+  'Dairy & Eggs',
+  'Seafood',
+  'Grains',
+  'Bakery',
+  'Frozen',
+  'Snacks',
+  'Drinks',
+  'Spices',
+  'Organic',
+  'Canned Food',
+  'Sauces',
+  'Sweets',
+  'Breakfast',
+],
                     _selectedType,
-                    (v) => setState(() => _selectedType = v!),
-                  ),
+(v) {
+  setState(() => _selectedType = v!);
+
+  if (_nameController.text.trim().isNotEmpty) {
+    Provider.of<IngredientProvider>(
+      context,
+      listen: false,
+    ).fetchNutrition(
+      _nameController.text,
+      _selectedType,
+    );
+  }
+},                  ),
 
                   _buildLabel("Expiration Date"),
                   _buildTextField(

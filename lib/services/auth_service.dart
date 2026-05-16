@@ -64,4 +64,40 @@ static Future<Map<String, dynamic>?> login(String email, String password) async 
       return false;
     }
   }
+
+
+static Future<Map<String, dynamic>?> getProfile(String token) async {
+  try {
+
+    final url =
+        "${ApiConstants.baseUrl}/user/profile";
+
+    print("PROFILE URL = $url");
+
+    final response = await http.get(
+      Uri.parse(url),
+
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    print("PROFILE STATUS: ${response.statusCode}");
+    print("PROFILE BODY: ${response.body}");
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+
+    return null;
+
+  } catch (e) {
+
+    print("GET PROFILE ERROR = $e");
+
+    return null;
+  }
+}
+
 }

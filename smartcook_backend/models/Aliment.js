@@ -3,7 +3,7 @@ const Inventory = require('./Inventory');
 
 class Aliment {
  
-  
+
   static async create(userId, data) {
     try {
       // 1. Récupérer ou créer l'inventaire lié à l'utilisateur
@@ -26,13 +26,15 @@ class Aliment {
         data.proteines || 0,
         data.glucides || 0,
         data.lipides || 0,
-        data.allergenes || 'Aucun',
+        data.allergenes || 'Non renseigné',
         data.marque || 'Générique',
         data.categorie || 'Inconnu',
         data.imageUrl || '',
         data.statut || 'disponible'
       ];
 
+
+      console.log(values);
       // On utilise await (db doit être configuré avec .promise())
       const [result] = await db.query(query, values);
       
@@ -101,7 +103,7 @@ class Aliment {
         [
           nom, quantite, unite, type, dateExpiration,
           calories || 0, proteines || 0, glucides || 0, lipides || 0,
-          allergenes || 'Aucun', marque || 'Générique', categorie || 'Inconnu',
+          allergenes || 'Non renseigné', marque || 'Générique', categorie || 'Inconnu',
           barcode || null, imageUrl || '', statut || 'disponible',
           id, userId
         ]

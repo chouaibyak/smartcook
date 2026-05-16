@@ -54,9 +54,9 @@ class _InventoryPageState extends State<InventoryPage> {
     final provider = Provider.of<IngredientProvider>(context);
     final grouped = _groupByCategory(provider.ingredients);
 
-    return Container(
-      color: Colors.grey[50],
-      child: SafeArea(
+   return Material(
+  color: Colors.grey[50],
+  child: SafeArea(
         child: Column(
           children: [
             const SizedBox(height: 10),

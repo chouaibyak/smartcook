@@ -67,13 +67,17 @@ class _InitialProfileScreenState extends State<InitialProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Profile saved on server")),
       );
-
-      Navigator.pushReplacement(
-        context, 
-        MaterialPageRoute(builder: (context) =>HomeScreen(
-  result: widget.result,
-))
-        );
+Navigator.pushReplacement(
+  context,
+  MaterialPageRoute(
+    builder: (context) => HomeScreen(
+      result: {
+        ...?widget.result,
+        "token": widget.token,
+      },
+    ),
+  ),
+);
     
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
