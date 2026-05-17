@@ -2,8 +2,8 @@ const db = require('../config/db');
 const Inventory = require('./Inventory');
 
 class Aliment {
- 
-  
+
+
   static async create(userId, data) {
     try {
       // 1. Récupérer ou créer l'inventaire lié à l'utilisateur
@@ -35,7 +35,7 @@ class Aliment {
 
       // On utilise await (db doit être configuré avec .promise())
       const [result] = await db.query(query, values);
-      
+
       return result.insertId; // Retourne l'ID de l'aliment créé
 
     } catch (error) {
@@ -88,30 +88,37 @@ class Aliment {
         allergenes, marque, categorie, barcode, imageUrl, statut
       } = data;
 
+      const formattedDate = dateExpiration
+        ? dateExpiration.split('T')[0]
+        : null;
+
       const [result] = await db.query(
         `UPDATE aliment a
-         JOIN inventaire i ON a.idInventaire = i.id
-         SET
-           a.nom = ?, a.quantite = ?, a.unite = ?, a.type = ?,
-           a.dateExpiration = ?, a.calories = ?, a.proteines = ?,
-           a.glucides = ?, a.lipides = ?, a.allergenes = ?,
-           a.marque = ?, a.categorie = ?, a.barcode = ?,
-           a.imageUrl = ?, a.statut = ?
-         WHERE a.id = ? AND i.idUtilisateur = ?`,
+   JOIN inventaire i ON a.idInventaire = i.id
+   SET
+     a.nom = ?, a.quantite = ?, a.unite = ?, a.type = ?,
+     a.dateExpiration = ?, a.calories = ?, a.proteines = ?,
+     a.glucides = ?, a.lipides = ?, a.allergenes = ?,
+     a.marque = ?, a.categorie = ?, a.barcode = ?,
+     a.imageUrl = ?, a.statut = ?
+   WHERE a.id = ? AND i.idUtilisateur = ?`,
         [
-          nom, quantite, unite, type, dateExpiration,
+          nom, quantite, unite, type, formattedDate,
           calories || 0, proteines || 0, glucides || 0, lipides || 0,
           allergenes || 'Aucun', marque || 'Générique', categorie || 'Inconnu',
-          barcode || null, imageUrl || '', statut || 'disponible',
+          barcode || null, imageUrl || '', statut || 'available',
           id, userId
         ]
       );
       return result.affectedRows > 0;
+      console.log("UPDATE BODY:", req.body);
+      console.log("UPDATE PARAMS:", { id, userId });
     } catch (error) {
       console.error('Erreur update:', error);
       return false;
     }
   }
+
 
   // Supprimer un aliment
   static async delete(id, userId) {

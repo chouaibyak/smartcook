@@ -22,17 +22,30 @@ class _ListPageState extends State<ListPage> {
   static const Color orangeDark = Color(0xFFA33A00);
 
   Future<void> markAsAvailable(Ingredient ingredient) async {
+    final provider = Provider.of<IngredientProvider>(context, listen: false);
+
     final updatedIngredient = ingredient.copyWith(statut: "available");
 
-    await Provider.of<IngredientProvider>(
-      context,
-      listen: false,
-    ).updateIngredient(ingredient.id!, updatedIngredient);
+    final success = await provider.updateIngredient(
+      ingredient.id!,
+      updatedIngredient,
+    );
 
-    await Provider.of<IngredientProvider>(
-      context,
-      listen: false,
-    ).fetchIngredients();
+    if (success) {
+      await provider.fetchIngredients();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("${ingredient.nom} marked as available")),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(provider.errorMessage ?? "Update failed")),
+        );
+      }
+    }
   }
 
   Future<void> replaceExpiredItem(Ingredient ingredient) async {
@@ -279,7 +292,13 @@ class _ListPageState extends State<ListPage> {
           ],
         ),
         child: IconButton(
-          onPressed: () {},
+          onPressed: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("AI shopping assistant will be added later"),
+              ),
+            );
+          },
           icon: const Icon(Icons.auto_awesome, color: Colors.white, size: 30),
         ),
       ),
@@ -373,7 +392,9 @@ class _ListPageState extends State<ListPage> {
                         subtitle: ingredient.type ?? "Ingredient",
                         quantity: "${ingredient.quantite} ${ingredient.unite}",
                         isChecked: checkedItems.contains(ingredient.id),
-                        onToggle: () => markAsAvailable(ingredient),
+                        onToggle: () async {
+                          await markAsAvailable(ingredient);
+                        },
                       );
                     }).toList(),
             ),
@@ -398,7 +419,9 @@ class _ListPageState extends State<ListPage> {
                         quantity: "${ingredient.quantite} ${ingredient.unite}",
                         isWarning: true,
                         isChecked: checkedItems.contains(ingredient.id),
-                        onToggle: () => markAsAvailable(ingredient),
+                        onToggle: () async {
+                          await markAsAvailable(ingredient);
+                        },
                       );
                     }).toList(),
             ),
@@ -707,7 +730,15 @@ class SuggestionCard extends StatelessWidget {
                 const Spacer(),
 
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          "Suggestions feature will be connected later",
+                        ),
+                      ),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: Color(0xFF0F5D3B),

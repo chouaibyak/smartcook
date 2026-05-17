@@ -5,19 +5,19 @@ const Aliment = require('../models/Aliment');
 // pour récupérer l'ID utilisateur depuis le JWT
 const getUserId = (req) => {
 
-    // Cherche l'userId soit dans :
-    // req.userId
-    // ou req.user.id
-    const id = req.userId || (req.user ? req.user.id : null);
+  // Cherche l'userId soit dans :
+  // req.userId
+  // ou req.user.id
+  const id = req.userId || (req.user ? req.user.id : null);
 
-    //  Sécurité :
-    // si aucun utilisateur connecté
-    // on retourne null
-    // et NON PAS 1 par défaut
-    if (!id) return null;
+  //  Sécurité :
+  // si aucun utilisateur connecté
+  // on retourne null
+  // et NON PAS 1 par défaut
+  if (!id) return null;
 
-    // Conversion en entier
-    return parseInt(id);
+  // Conversion en entier
+  return parseInt(id);
 };
 
 exports.getAllIngredients = async (req, res) => {
@@ -106,6 +106,9 @@ exports.updateIngredient = async (req, res) => {
         message: 'Cet aliment ne vous appartient pas'
       });
     }
+
+    console.log("UPDATE BODY:", req.body);
+    console.log("UPDATE PARAMS:", { id, userId });
 
     // Mise à jour de l'aliment
     const updated = await Aliment.update(id, userId, req.body);
