@@ -11,16 +11,14 @@ const getUserId = (req) => {
 
 exports.getNutritionInfo = async (req, res) => {
   try {
-    const { name } = req.query;
-
+const { name, type } = req.query;
     // 1. Validation simple
     if (!name || name.trim() === "") {
       return res.status(400).json({ error: "Le nom de l'aliment est requis" });
     }
 
     // 2. Appel au service
-    const nutrition = await nutritionService.analyzeIngredient(name);
-
+const nutrition = await nutritionService.analyzeIngredient(name, type);
     // 3. Si le service a retourné une erreur 503 (gérée dans le service)
     if (nutrition.error) {
       return res.status(503).json({ 
@@ -42,6 +40,8 @@ exports.getNutritionInfo = async (req, res) => {
 exports.saveAliment = async (req, res) => {
   try {
     const data = req.body;
+
+    console.log("DATA RECUE:", data);
     const userId = parseInt(req.userId);
 
     console.log("DEBUG: Tentative de sauvegarde pour User ID :", userId);

@@ -59,12 +59,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (result != null && result.containsKey('token')) {
       final token = result['token'];
-      
-    
-      
-      
+  
 
-      print("LOGIN RESULT: $result");
+print("LOGIN RESULT: $result");
 print("USER FROM LOGIN: ${result['user']}");
 print("TOKEN FROM LOGIN: ${result['token']}");
 

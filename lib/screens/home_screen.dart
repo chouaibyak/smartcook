@@ -11,6 +11,7 @@ import 'barcode_scan_screen.dart';
 import 'ai_scan_screen.dart';
 import 'recipe_results_screen.dart';
 import 'shopping_list_screen.dart';
+import 'profile_screen.dart';
 
 import '../widgets/custom_app_bar.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
@@ -53,30 +54,6 @@ class _HomeScreenState extends State<HomeScreen> {
       // selon les ingrédients disponibles
       recipeProvider.generateSuggestions(ingredientProvider.ingredients);
     });
-
-    // Liste des pages utilisées dans IndexedStack
-    final pages = [
-      HomePage(result: widget.result, onNavigate: onTabTapped),
-
-      const InventoryPage(), // 1
-      const BarcodeScanScreen(), // 2
-      const RecipesPage(), // 3
-      const ListPage(), // 4
-
-      AddIngredientScreen(
-        // 5
-        onSave: () async {
-          await Provider.of<IngredientProvider>(
-            context,
-            listen: false,
-          ).fetchIngredients();
-
-          onTabTapped(1);
-        },
-      ),
-
-      const AiScanScreen(), // 6
-    ];
   }
 
   // Fonction utilisée pour changer la page affichée
@@ -108,14 +85,40 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
 
       const AiScanScreen(),
+
+      ProfileScreen(
+        token: widget.result?['token'] ?? '',
+      ),
     ];
 
     final bottomNavIndex = currentIndex <= 4 ? currentIndex : 0;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      appBar: const CustomAppBar(),
-      body: IndexedStack(index: currentIndex, children: pages),
+
+      appBar: CustomAppBar(
+        onProfileTap: () {
+          final token = widget.result?['token'];
+
+          if (token == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Token introuvable"),
+              ),
+            );
+            return;
+          }
+
+          onTabTapped(7);
+        },
+      ), // IndexedStack garde les pages en mémoire
+      // contrairement à Navigator.push
+      body: IndexedStack(
+        index: currentIndex,
+        children: pages,
+      ),
+
+      // Bottom navigation bar
       bottomNavigationBar: CustomBottomNav(
         currentIndex: bottomNavIndex,
         onTap: onTabTapped,

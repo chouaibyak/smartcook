@@ -3,6 +3,7 @@ const Inventory = require('./Inventory');
 
 class Aliment {
 
+ 
 
   static async create(userId, data) {
     try {
@@ -26,13 +27,15 @@ class Aliment {
         data.proteines || 0,
         data.glucides || 0,
         data.lipides || 0,
-        data.allergenes || 'Aucun',
+        data.allergenes || 'Non renseigné',
         data.marque || 'Générique',
         data.categorie || 'Inconnu',
         data.imageUrl || '',
         data.statut || 'disponible'
       ];
 
+
+      console.log(values);
       // On utilise await (db doit être configuré avec .promise())
       const [result] = await db.query(query, values);
 

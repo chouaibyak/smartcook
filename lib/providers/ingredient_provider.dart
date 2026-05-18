@@ -18,7 +18,14 @@ class IngredientProvider with ChangeNotifier {
   String category = "", allergens = "", brand = "", imageUrl = "";
 
   void resetNutrition() {
-    calories = 0; proteins = 0; carbs = 0; fats = 0;
+    calories = 0;
+    proteins = 0;
+    carbs = 0;
+    fats = 0;
+    category = "";
+    allergens = "";
+    brand = "";
+    imageUrl = "";
     notifyListeners();
   }
 
@@ -40,12 +47,11 @@ class IngredientProvider with ChangeNotifier {
   notifyListeners();
 }
 
-  Future<void> fetchNutrition(String name) async {
-    _isLoading = true;
+Future<void> fetchNutrition(String name, String type) async {    _isLoading = true;
     notifyListeners();
 
     try {
-      final data = await _apiService.analyzeIngredient(name);
+final data = await _apiService.analyzeIngredient(name, type);
       calories = (data['calories'] as num).toDouble();
       proteins = (data['proteines'] as num).toDouble();
       carbs = (data['glucides'] as num).toDouble();
@@ -104,26 +110,27 @@ class IngredientProvider with ChangeNotifier {
 
   // -------- CRUD --------
 
-  Future<void> fetchIngredients() async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
+Future<void> fetchIngredients() async {
+  _isLoading = true;
+  _errorMessage = null;
+  notifyListeners();
 
-    try {
-      _ingredients = await _service.getAllIngredients();
+  try {
+    _ingredients = await _service.getAllIngredients();
 
-      for (var ingredient in _ingredients) {
-        if (ingredient.imageUrl == null || ingredient.imageUrl!.isEmpty) {
-          ingredient.imageUrl = ImageService.getMealDbImage(ingredient.nom);
-        }
+    for (var ingredient in _ingredients) {
+      if (ingredient.imageUrl == null || ingredient.imageUrl!.isEmpty) {
+        ingredient.imageUrl =
+            ImageService.getMealDbImage(ingredient.nom, ingredient.type);
       }
-    } catch (e) {
-      _errorMessage = e.toString();
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
+  } catch (e) {
+    _errorMessage = e.toString();
+  } finally {
+    _isLoading = false;
+    notifyListeners();
   }
+}
 
   Future<bool> addIngredient(Ingredient ingredient) async {
     _isLoading = true;
@@ -132,7 +139,8 @@ class IngredientProvider with ChangeNotifier {
 
     try {
       if (ingredient.imageUrl == null || ingredient.imageUrl!.isEmpty) {
-        ingredient.imageUrl = ImageService.getMealDbImage(ingredient.nom);
+        ingredient.imageUrl =
+            ImageService.getMealDbImage(ingredient.nom, ingredient.type);
       }
 
       await _service.addIngredient(ingredient);
