@@ -1,4 +1,8 @@
-require('dotenv').config(); // On charge les variables d'environnement ici
+const path = require('path');
+require('dotenv').config({
+    path: path.join(__dirname, '.env'),
+    quiet: true
+}); // Charge smartcook_backend/.env, quel que soit le dossier de lancement
 const app = require('./app'); // On importe la configuration de l'app
 
 const PORT = process.env.PORT || 3000;

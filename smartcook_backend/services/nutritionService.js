@@ -20,7 +20,7 @@ exports.analyzeIngredient = async (name, type) => {
       }
     });
 
-    const image = await imageService.getFoodImage(name);
+    const image = await imageService.getFoodImage(name, type);
 
     const naturalTypes = [
       'Fruits',
@@ -92,7 +92,7 @@ lipides: Number((nutriments.fat_100g || 0).toFixed(1)),
   } catch (error) {
     console.error("Erreur OpenFoodFacts:", error.message);
 
-    const image = await imageService.getFoodImage(name);
+    const image = await imageService.getFoodImage(name, type);
 
     return {
       calories: 0,

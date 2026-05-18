@@ -36,8 +36,6 @@ Future<void> loadProfile() async {
 
   final token = widget.token;
 
-  print("TOKEN PROFILE = $token");
-
   final data = await AuthService.getProfile(token);
 
   print("PROFILE RESPONSE = $data");

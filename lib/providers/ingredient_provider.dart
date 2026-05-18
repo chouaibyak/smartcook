@@ -18,7 +18,14 @@ class IngredientProvider with ChangeNotifier {
   String category = "", allergens = "", brand = "", imageUrl = "";
 
   void resetNutrition() {
-    calories = 0; proteins = 0; carbs = 0; fats = 0;
+    calories = 0;
+    proteins = 0;
+    carbs = 0;
+    fats = 0;
+    category = "";
+    allergens = "";
+    brand = "";
+    imageUrl = "";
     notifyListeners();
   }
 
@@ -114,7 +121,7 @@ Future<void> fetchIngredients() async {
     for (var ingredient in _ingredients) {
       if (ingredient.imageUrl == null || ingredient.imageUrl!.isEmpty) {
         ingredient.imageUrl =
-            ImageService.getMealDbImage(ingredient.nom);
+            ImageService.getMealDbImage(ingredient.nom, ingredient.type);
       }
     }
   } catch (e) {
@@ -132,7 +139,8 @@ Future<void> fetchIngredients() async {
 
     try {
       if (ingredient.imageUrl == null || ingredient.imageUrl!.isEmpty) {
-        ingredient.imageUrl = ImageService.getMealDbImage(ingredient.nom);
+        ingredient.imageUrl =
+            ImageService.getMealDbImage(ingredient.nom, ingredient.type);
       }
 
       await _service.addIngredient(ingredient);

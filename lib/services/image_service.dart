@@ -1,6 +1,9 @@
 class ImageService {
+  static String _mealDbIngredientUrl(String ingredient) {
+    return 'https://www.themealdb.com/images/ingredients/${Uri.encodeComponent(ingredient)}.png';
+  }
 
-  static String getMealDbImage(String foodName) {
+  static String getMealDbImage(String foodName, [String? type]) {
     final name = foodName.toLowerCase().trim();
 
     final map = {
@@ -10,12 +13,23 @@ class ImageService {
       'chicken': 'Chicken',
       'viande': 'Beef',
       'beef': 'Beef',
+      'boeuf': 'Beef',
+      'bœuf': 'Beef',
+      'agneau': 'Lamb',
+      'porc': 'Pork',
+      'jambon': 'Ham',
 
       // Féculents
       'riz': 'Rice',
       'rice': 'Rice',
       'pomme de terre': 'Potato',
       'potato': 'Potato',
+      'pates': 'Pasta',
+      'pâtes': 'Pasta',
+      'pasta': 'Pasta',
+      'pain': 'Bread',
+      'bread': 'Bread',
+      'farine': 'Flour',
 
       // Produits laitiers
       'lait': 'Milk',
@@ -23,7 +37,14 @@ class ImageService {
       'fromage': 'Cheese',
       'cheese': 'Cheese',
       'oeuf': 'Egg',
+      'oeufs': 'Egg',
+      'œuf': 'Egg',
+      'œufs': 'Egg',
       'egg': 'Egg',
+      'beurre': 'Butter',
+      'butter': 'Butter',
+      'yaourt': 'Yogurt',
+      'yogurt': 'Yogurt',
 
       // Fruits & légumes
       'tomate': 'Tomato',
@@ -36,6 +57,27 @@ class ImageService {
       'banana': 'Banana',
       'oignon': 'Onion',
       'onion': 'Onion',
+      'ail': 'Garlic',
+      'garlic': 'Garlic',
+      'citron': 'Lemon',
+      'lemon': 'Lemon',
+      'orange': 'Orange',
+      'fraise': 'Strawberries',
+      'strawberry': 'Strawberries',
+      'salade': 'Lettuce',
+      'lettuce': 'Lettuce',
+      'concombre': 'Cucumber',
+      'cucumber': 'Cucumber',
+      'champignon': 'Mushrooms',
+      'mushroom': 'Mushrooms',
+
+      // Poissons et fruits de mer
+      'thon': 'Tuna',
+      'tuna': 'Tuna',
+      'saumon': 'Salmon',
+      'salmon': 'Salmon',
+      'crevette': 'Prawns',
+      'shrimp': 'Prawns',
 
       // Produits industriels
       'nutella': 'Nutella',
@@ -65,12 +107,11 @@ class ImageService {
           return 'https://images.unsplash.com/photo-1581006852262-e4307cf6283a?q=80&w=800';
         }
 
-        // ✅ Retour ThemealDB normal
-        return 'https://www.themealdb.com/images/ingredients/${entry.value}.png';
+        return _mealDbIngredientUrl(entry.value);
       }
     }
 
-    return getImageForType(null);
+    return getImageForType(type);
   }
 
   static String getImageForType(String? type) {
@@ -90,27 +131,67 @@ class ImageService {
       case 'spices':
         return 'https://images.unsplash.com/photo-1509358271058-acd22cc93898?q=80&w=800';
 
+      case 'seafood':
+      case 'poisson':
+      case 'fruits de mer':
+        return _mealDbIngredientUrl('Salmon');
+
+      case 'grains':
+      case 'cereals':
+      case 'céréales':
+      case 'féculents':
+        return _mealDbIngredientUrl('Rice');
+
+      case 'bakery':
+      case 'boulangerie':
+        return _mealDbIngredientUrl('Bread');
+
+      case 'frozen':
+      case 'surgelés':
+        return _mealDbIngredientUrl('Peas');
+
+      case 'organic':
+      case 'bio':
+        return _mealDbIngredientUrl('Apple');
+
+      case 'canned food':
+      case 'conserve':
+      case 'conserves':
+        return _mealDbIngredientUrl('Tomato');
+
+      case 'sauces':
+      case 'sauce':
+        return _mealDbIngredientUrl('Soy Sauce');
+
+      case 'sweets':
+      case 'sweet':
+      case 'sucreries':
+        return _mealDbIngredientUrl('Sugar');
+
+      case 'breakfast':
+      case 'petit déjeuner':
+        return _mealDbIngredientUrl('Egg');
+
       case 'viande':
       case 'meat':
-        return 'https://www.themealdb.com/images/ingredients/Beef.png';
+        return _mealDbIngredientUrl('Beef');
 
       case 'produits laitiers':
       case 'dairy':
       case 'dairy & eggs':
-        return 'https://www.themealdb.com/images/ingredients/Milk.png';
+        return _mealDbIngredientUrl('Milk');
 
       case 'fruits':
       case 'fruit':
-        return 'https://www.themealdb.com/images/ingredients/Apple.png';
+        return _mealDbIngredientUrl('Apple');
 
       case 'légumes':
       case 'vegetables':
-        return 'https://www.themealdb.com/images/ingredients/Carrot.png';
+        return _mealDbIngredientUrl('Carrot');
 
       default:
 
-        // ✅ image neutre
-        return 'https://www.themealdb.com/images/ingredients/Chicken.png';
+        return _mealDbIngredientUrl('Apple');
     }
   }
 }

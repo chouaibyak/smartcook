@@ -54,35 +54,6 @@ class _HomeScreenState extends State<HomeScreen> {
       // selon les ingrédients disponibles
       recipeProvider.generateSuggestions(ingredientProvider.ingredients);
     });
-
-    // Liste des pages utilisées dans IndexedStack
-    final pages = [
-      HomePage(result: widget.result, onNavigate: onTabTapped),
-
-      const InventoryPage(), // 1
-      const BarcodeScanScreen(), // 2
-      const RecipesPage(), // 3
-      const ListPage(), // 4
-
-      AddIngredientScreen(
-        // 5
-        onSave: () async {
-          await Provider.of<IngredientProvider>(
-            context,
-            listen: false,
-          ).fetchIngredients();
-
-          onTabTapped(1);
-        },
-      ),
-
-      const AiScanScreen(), // 6
-
-ProfileScreen(
-  token: widget.result?['token'] ?? '',
-),
-
-    ];
   }
 
   // Fonction utilisée pour changer la page affichée
@@ -114,6 +85,10 @@ ProfileScreen(
       ),
 
       const AiScanScreen(),
+
+      ProfileScreen(
+        token: widget.result?['token'] ?? '',
+      ),
     ];
 
     final bottomNavIndex = currentIndex <= 4 ? currentIndex : 0;
@@ -121,24 +96,22 @@ ProfileScreen(
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
 
-appBar: CustomAppBar(
-  onProfileTap: () {
-    final token = widget.result?['token'];
+      appBar: CustomAppBar(
+        onProfileTap: () {
+          final token = widget.result?['token'];
 
-    print("TOKEN SENT TO PROFILE = $token");
+          if (token == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Token introuvable"),
+              ),
+            );
+            return;
+          }
 
-    if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Token introuvable"),
-        ),
-      );
-      return;
-    }
-
- onTabTapped(7);
-  },
-), // IndexedStack garde les pages en mémoire
+          onTabTapped(7);
+        },
+      ), // IndexedStack garde les pages en mémoire
       // contrairement à Navigator.push
       body: IndexedStack(
         index: currentIndex,
@@ -146,10 +119,10 @@ appBar: CustomAppBar(
       ),
 
       // Bottom navigation bar
-    bottomNavigationBar: CustomBottomNav(
- currentIndex: currentIndex > 4 ? 0 : currentIndex,
-  onTap: onTabTapped,
-),
+      bottomNavigationBar: CustomBottomNav(
+        currentIndex: bottomNavIndex,
+        onTap: onTabTapped,
+      ),
     );
   }
 }

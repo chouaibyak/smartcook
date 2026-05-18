@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smartcook/providers/ingredient_provider.dart';
 import 'package:smartcook/services/api_service.dart';
+import 'package:smartcook/services/image_service.dart';
 import '../widgets/custom_app_bar.dart';
 import 'dart:async';
 
@@ -33,26 +34,26 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
  
 
   @override
-void initState() {
-  super.initState();
+  void initState() {
+    super.initState();
 
-  print("INIT STATE RUNNING");
+    print("INIT STATE RUNNING");
 
-  _nameController.addListener(_onNameChanged);
-}
+    _nameController.addListener(_onNameChanged);
+  }
 
   void _onNameChanged() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    
+    Provider.of<IngredientProvider>(context, listen: false).resetNutrition();
+
     if (_nameController.text.isEmpty) {
-      Provider.of<IngredientProvider>(context, listen: false).resetNutrition();
       return;
     }
 
     _debounce = Timer(const Duration(milliseconds: 1500), () {
       // Appelle le provider
       Provider.of<IngredientProvider>(context, listen: false)
-.fetchNutrition(_nameController.text, _selectedType);
+          .fetchNutrition(_nameController.text, _selectedType);
     });
   }
 
@@ -78,6 +79,16 @@ final data = await ApiService().analyzeIngredient(
 
   Future<void> _handleSave() async {
     final nutri = Provider.of<IngredientProvider>(context, listen: false);
+    final ingredientName = _nameController.text.trim();
+
+    if (nutri.imageUrl.isEmpty && ingredientName.isNotEmpty) {
+      await nutri.fetchNutrition(ingredientName, _selectedType);
+    }
+
+    final fallbackImageUrl = ImageService.getMealDbImage(
+      ingredientName,
+      _selectedType,
+    );
 
     final data = {
 
@@ -89,7 +100,7 @@ final data = await ApiService().analyzeIngredient(
 // req.userId depuis le JWT token
 
 
-      "nom": _nameController.text,
+      "nom": ingredientName,
       "quantite": double.tryParse(_qtyController.text) ?? 0,
       "unite": _selectedUnit,
       "type": _selectedType,
@@ -98,10 +109,10 @@ final data = await ApiService().analyzeIngredient(
       "proteines": nutri.proteins,
       "glucides": nutri.carbs,
       "lipides": nutri.fats,
-      "allergenes": nutri.allergens, 
-      "marque": nutri.brand,         
-      "categorie": nutri.category,   
-      "imageUrl": nutri.imageUrl,     
+      "allergenes": nutri.allergens,
+      "marque": nutri.brand,
+      "categorie": nutri.category,
+      "imageUrl": nutri.imageUrl.isNotEmpty ? nutri.imageUrl : fallbackImageUrl,
     };
 
     bool success = await ApiService().saveIngredient(data);
@@ -123,6 +134,7 @@ final data = await ApiService().analyzeIngredient(
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _nameController.dispose();
     _qtyController.dispose();
     _expiryController.dispose();
@@ -272,19 +284,7 @@ final data = await ApiService().analyzeIngredient(
                     child: Stack(
                       alignment: Alignment.bottomLeft,
                       children: [
-                        Image.asset(
-                          'assets/images/VegetableInBow.jpg',
-                          height: 180,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            height: 180,
-                            color: const Color(0xFF2E7D32),
-                            child: const Center(
-                              child: Icon(Icons.image_not_supported, color: Colors.white54, size: 48),
-                            ),
-                          ),
-                        ),
+                        _buildIngredientImage(),
                         // Gradient overlay
                         Container(
                           height: 180,
@@ -520,6 +520,33 @@ final data = await ApiService().analyzeIngredient(
               .map((e) => DropdownMenuItem(value: e, child: Text(e)))
               .toList(),
           onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIngredientImage() {
+    final name = _nameController.text.trim();
+    final nutriProvider = Provider.of<IngredientProvider>(context);
+    final imageUrl = nutriProvider.imageUrl.isNotEmpty
+        ? nutriProvider.imageUrl
+        : ImageService.getMealDbImage(name, _selectedType);
+
+    return Image.network(
+      imageUrl,
+      height: 180,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => Container(
+        height: 180,
+        width: double.infinity,
+        color: const Color(0xFF2E7D32),
+        child: const Center(
+          child: Icon(
+            Icons.image_not_supported,
+            color: Colors.white54,
+            size: 48,
+          ),
         ),
       ),
     );
