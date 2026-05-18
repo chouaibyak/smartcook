@@ -62,7 +62,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => isLoading = true);
 
-     // Appel au backend
+    // Appel au backend
     final result = await AuthService.register(
       "${firstNameController.text} ${lastNameController.text}",
       emailController.text.trim(),
@@ -73,7 +73,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (result != null && result.containsKey('token')) {
       showMessage("Account created successfully ✅");
-      
+
       // On passe le TOKEN à l'écran suivant
       Navigator.pushReplacement(
         context,
@@ -87,12 +87,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: green,
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: green));
   }
 
   @override
@@ -113,12 +110,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: const Color(0xFFB5C3B8)),
         ),
-        child: Center(
-          child: Text(
-            text,
-            style: const TextStyle(fontSize: 19),
-          ),
-        ),
+        child: Center(child: Text(text, style: const TextStyle(fontSize: 19))),
       ),
     );
   }

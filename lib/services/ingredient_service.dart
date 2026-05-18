@@ -10,7 +10,8 @@ class IngredientService {
         Uri.parse(ApiConstants.inventory),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer  $token',
+          // Correction ici : un seul espace après Bearer pour éviter le bug 401
+          'Authorization': 'Bearer $token',
         },
       );
       if (response.statusCode == 200) {
@@ -23,18 +24,22 @@ class IngredientService {
     }
   }
 
-  // Ajouter un item à l'inventaire
+  // Ajouter un item à l'inventaire (Ajoute une ligne dans la table `aliment`)
   static Future<bool> addItem(String token, Map<String, dynamic> item) async {
     try {
-      // On transforme les clés pour correspondre au Backend Node.js
+      // On adapte les clés pour correspondre EXACTEMENT aux colonnes de ta table `aliment`
       final Map<String, dynamic> backendData = {
-        "nom": item['name'], // 'name' devient 'nom'
-        "quantite": item['quantity'] ?? 1,
+        "nom": item['name'] ?? item['nom'],
+        "quantite": item['quantity'] != null
+            ? double.tryParse(item['quantity'].toString()) ?? 1.0
+            : 1.0, // Double comme dans ton SQL
         "unite": item['unit'] ?? 'pcs',
-        "date_expiration": null, // Optionnel selon ton controller
+        "barcode": item['barcode'], // <-- AJOUT DE LA COLONNE BARCODE ICI
+        "dateExpiration":
+            item['dateExpiration'], // Correspond à ton fichier SQL
       };
 
-      print("DEBUG: Envoi au backend -> $backendData");
+      print("DEBUG: Envoi de l'aliment au backend -> $backendData");
 
       final response = await http.post(
         Uri.parse(ApiConstants.inventory),
@@ -70,7 +75,7 @@ class IngredientService {
     }
   }
 
-  // Lookup OpenFoodFacts par barcode
+  // Lookup OpenFoodFacts par barcode (Fidèle à ton interface ServiceOpenFoodFacts du diagramme)
   static Future<Map<String, dynamic>> lookupBarcode(String barcode) async {
     final url = Uri.parse(
       'https://world.openfoodfacts.org/api/v0/product/$barcode.json',
@@ -85,6 +90,8 @@ class IngredientService {
           'name': product['product_name'] ?? 'Produit inconnu',
           'quantity': product['quantity'] ?? '',
           'brand': product['brands'] ?? '',
+          'barcode':
+              barcode, // On garde le barcode en mémoire pour l'ajouter plus tard !
         };
       }
     }
