@@ -25,26 +25,37 @@ class ApiService {
     };
   }
 
-  Future<Map<String, dynamic>> analyzeIngredient(String name) async {
-    final response = await http.get(
-      Uri.parse('${ApiConstants.aliments}/analyze?name=$name'),
-      headers: _headers(),
-    );
+Future<Map<String, dynamic>> analyzeIngredient(String name, String type) async {
+  final uri = Uri.parse('$baseUrl/analyze').replace(
+    queryParameters: {
+      'name': name,
+      'type': type,
+    },
+  );
 
-    print("ANALYZE STATUS: ${response.statusCode}");
-    print("ANALYZE BODY: ${response.body}");
+  final response = await http.get(
+    uri,
+    headers: _headers(),
+  );
 
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
-    }
+  print("ANALYZE STATUS: ${response.statusCode}");
+  print("ANALYZE BODY: ${response.body}");
 
-    return {
-      "calories": 0,
-      "proteines": 0,
-      "glucides": 0,
-      "lipides": 0
-    };
+  if (response.statusCode == 200) {
+    return json.decode(response.body);
   }
+
+  return {
+    "calories": 0,
+    "proteines": 0,
+    "glucides": 0,
+    "lipides": 0,
+    "allergenes": "Non renseigné",
+    "categorie": type,
+    "marque": "Inconnu",
+    "imageUrl": ""
+  };
+}
 
   Future<bool> saveIngredient(Map<String, dynamic> data) async {
     print("HEADERS: ${_headers()}");

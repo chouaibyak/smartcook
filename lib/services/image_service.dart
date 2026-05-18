@@ -30,12 +30,10 @@ class ImageService {
       'tomato': 'Tomato',
       'carotte': 'Carrot',
       'carrot': 'Carrot',
-      'pomme': 'APPLE_CUSTOM',
-'apple': 'APPLE_CUSTOM',
-
-'banane': 'BANANA_CUSTOM',
-'banana': 'BANANA_CUSTOM',
-      
+      'pomme': 'Apple',
+      'apple': 'Apple',
+      'banane': 'Banana',
+      'banana': 'Banana',
       'oignon': 'Onion',
       'onion': 'Onion',
 
@@ -67,14 +65,7 @@ class ImageService {
           return 'https://images.unsplash.com/photo-1581006852262-e4307cf6283a?q=80&w=800';
         }
 
-
-if (entry.value == 'APPLE_CUSTOM') {
-  return 'https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?q=80&w=800';
-}
-
-if (entry.value == 'BANANA_CUSTOM') {
-  return 'https://images.unsplash.com/photo-1603833665858-e61d17a86224?q=80&w=800';
-}
+        // ✅ Retour ThemealDB normal
         return 'https://www.themealdb.com/images/ingredients/${entry.value}.png';
       }
     }
@@ -87,17 +78,17 @@ if (entry.value == 'BANANA_CUSTOM') {
     switch (type?.toLowerCase()) {
 
       case 'snacks':
-case 'snack':
-  return 'https://images.unsplash.com/photo-1621939514649-280e2ee25f60?q=80&w=800';
+      case 'snack':
+        return 'https://images.unsplash.com/photo-1621939514649-280e2ee25f60?q=80&w=800';
 
-case 'drink':
-case 'drinks':
-case 'boisson':
-case 'boissons':
-  return 'https://images.unsplash.com/photo-1544145945-f90425340c7e?q=80&w=800';
+      case 'drink':
+      case 'drinks':
+      case 'boisson':
+      case 'boissons':
+        return 'https://images.unsplash.com/photo-1544145945-f90425340c7e?q=80&w=800';
 
-case 'spices':
-  return 'https://images.unsplash.com/photo-1509358271058-acd22cc93898?q=80&w=800';
+      case 'spices':
+        return 'https://images.unsplash.com/photo-1509358271058-acd22cc93898?q=80&w=800';
 
       case 'viande':
       case 'meat':
@@ -108,18 +99,18 @@ case 'spices':
       case 'dairy & eggs':
         return 'https://www.themealdb.com/images/ingredients/Milk.png';
 
-    case 'fruits':
-case 'fruit':
-  return 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?q=80&w=800';
-  
+      case 'fruits':
+      case 'fruit':
+        return 'https://www.themealdb.com/images/ingredients/Apple.png';
+
       case 'légumes':
       case 'vegetables':
         return 'https://www.themealdb.com/images/ingredients/Carrot.png';
 
       default:
 
-        // ✅ image neutre au lieu de Chicken
-        return 'https://images.unsplash.com/photo-1495195134817-aeb325a55b65?q=80&w=800';
+        // ✅ image neutre
+        return 'https://www.themealdb.com/images/ingredients/Chicken.png';
     }
   }
 }

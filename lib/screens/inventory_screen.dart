@@ -54,9 +54,9 @@ class _InventoryPageState extends State<InventoryPage> {
     final provider = Provider.of<IngredientProvider>(context);
     final grouped = _groupByCategory(provider.ingredients);
 
-    return Container(
-      color: Colors.grey[50],
-      child: SafeArea(
+   return Material(
+  color: Colors.grey[50],
+  child: SafeArea(
         child: Column(
           children: [
             const SizedBox(height: 10),
@@ -383,34 +383,6 @@ Widget _buildCard(Ingredient ingredient) {
     ),
   );
 }
-
-
-
-
-void _showIngredientDetails(Ingredient ingredient) {
-  showDialog(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: Text(ingredient.nom),
-   content: Text(
-  "Quantity: ${ingredient.quantite} ${ingredient.unite}\n"
-  "Category: ${ingredient.type}\n"
-  "Expiration: ${ingredient.dateExpiration.day}/${ingredient.dateExpiration.month}/${ingredient.dateExpiration.year}\n"
-  "Calories: ${ingredient.calories ?? '-'}\n"
-  "Proteins: ${ingredient.proteines ?? '-'}\n"
-  "Carbs: ${ingredient.glucides ?? '-'}\n"
-  "Fats: ${ingredient.lipides ?? '-'}",
-),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text("Close"),
-        ),
-      ],
-    ),
-  );
-}
-
 
 
 void _confirmDelete(Ingredient ingredient) {

@@ -5,6 +5,7 @@ const userRoutes = require('./routes/userRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes'); 
 const alimentRoutes = require('./routes/alimentRoutes');
 
+
 const app = express();
 
 // 1. Middlewares de base
@@ -42,5 +43,8 @@ app.use((err, req, res, next) => {
         error: err.message
     });
 });
+
+
+
 
 module.exports = app;

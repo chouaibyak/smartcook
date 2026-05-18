@@ -11,6 +11,7 @@ import 'barcode_scan_screen.dart';
 import 'ai_scan_screen.dart';
 import 'recipe_results_screen.dart';
 import 'shopping_list_screen.dart';
+import 'profile_screen.dart';
 
 import '../widgets/custom_app_bar.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
@@ -76,6 +77,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
 
       const AiScanScreen(), // 6
+
+ProfileScreen(
+  token: widget.result?['token'] ?? '',
+),
+
     ];
   }
 
@@ -114,12 +120,36 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      appBar: const CustomAppBar(),
-      body: IndexedStack(index: currentIndex, children: pages),
-      bottomNavigationBar: CustomBottomNav(
-        currentIndex: bottomNavIndex,
-        onTap: onTabTapped,
+
+appBar: CustomAppBar(
+  onProfileTap: () {
+    final token = widget.result?['token'];
+
+    print("TOKEN SENT TO PROFILE = $token");
+
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Token introuvable"),
+        ),
+      );
+      return;
+    }
+
+ onTabTapped(7);
+  },
+), // IndexedStack garde les pages en mémoire
+      // contrairement à Navigator.push
+      body: IndexedStack(
+        index: currentIndex,
+        children: pages,
       ),
+
+      // Bottom navigation bar
+    bottomNavigationBar: CustomBottomNav(
+ currentIndex: currentIndex > 4 ? 0 : currentIndex,
+  onTap: onTabTapped,
+),
     );
   }
 }

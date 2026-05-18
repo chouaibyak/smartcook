@@ -49,19 +49,21 @@ void initState() {
       return;
     }
 
-    _debounce = Timer(const Duration(milliseconds: 800), () {
+    _debounce = Timer(const Duration(milliseconds: 1500), () {
       // Appelle le provider
       Provider.of<IngredientProvider>(context, listen: false)
-          .fetchNutrition(_nameController.text);
+.fetchNutrition(_nameController.text, _selectedType);
     });
   }
 
   Future<void> _fetchNutritionAI(String name) async {
     setState(() => _isLoadingAI = true);
     try {
-      final provider = Provider.of<IngredientProvider>(context, listen: false);
-      await provider.fetchNutrition(name);
-
+final data = await ApiService().analyzeIngredient(
+  name,
+  _selectedType,
+);
+        print(data);
       setState(() {
         _calories = provider.calories;
         _proteins = provider.proteins;
@@ -76,20 +78,31 @@ void initState() {
 
   Future<void> _handleSave() async {
     final nutri = Provider.of<IngredientProvider>(context, listen: false);
-    final ingredient = Ingredient(
-      id: 0,
-      nom: _nameController.text.trim(),
-      quantite: double.tryParse(_qtyController.text) ?? 0,
-      unite: _selectedUnit,
-      type: _selectedType,
-      dateExpiration:
-          DateTime.tryParse(_expiryController.text) ?? DateTime.now(),
-      calories: nutri.calories,
-      proteines: nutri.proteins,
-      glucides: nutri.carbs,
-      lipides: nutri.fats,
-      imageUrl: nutri.imageUrl,
-    );
+
+    final data = {
+
+      //  ANCIEN CODE
+//"idInventaire": 1,
+
+// NEW CODE
+// supprimé car backend utilise maintenant
+// req.userId depuis le JWT token
+
+
+      "nom": _nameController.text,
+      "quantite": double.tryParse(_qtyController.text) ?? 0,
+      "unite": _selectedUnit,
+      "type": _selectedType,
+      "dateExpiration": _expiryController.text,
+      "calories": nutri.calories,
+      "proteines": nutri.proteins,
+      "glucides": nutri.carbs,
+      "lipides": nutri.fats,
+      "allergenes": nutri.allergens, 
+      "marque": nutri.brand,         
+      "categorie": nutri.category,   
+      "imageUrl": nutri.imageUrl,     
+    };
 
     bool success = await nutri.addIngredient(ingredient);
     if (success) {
@@ -196,10 +209,38 @@ void initState() {
 
                   _buildLabel("Ingredient Type"),
                   _buildDropdown(
-                    ['Vegetables', 'Fruits', 'Meat', 'Dairy', 'Grains', 'Spices'],
+                   [
+  'Vegetables',
+  'Fruits',
+  'Meat',
+  'Dairy & Eggs',
+  'Seafood',
+  'Grains',
+  'Bakery',
+  'Frozen',
+  'Snacks',
+  'Drinks',
+  'Spices',
+  'Organic',
+  'Canned Food',
+  'Sauces',
+  'Sweets',
+  'Breakfast',
+],
                     _selectedType,
-                    (v) => setState(() => _selectedType = v!),
-                  ),
+(v) {
+  setState(() => _selectedType = v!);
+
+  if (_nameController.text.trim().isNotEmpty) {
+    Provider.of<IngredientProvider>(
+      context,
+      listen: false,
+    ).fetchNutrition(
+      _nameController.text,
+      _selectedType,
+    );
+  }
+},                  ),
 
                   _buildLabel("Expiration Date"),
                   _buildTextField(
