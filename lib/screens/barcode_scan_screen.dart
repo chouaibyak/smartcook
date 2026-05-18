@@ -19,9 +19,12 @@ class _ScanPageState extends State<ScanPage> {
   int _selectedTab = 0;
   bool _isLoading = false;
   bool _hasResult = false;
-  String? _scannedBarcode; // Contient la valeur brute du code-barres scanné
+  String? _scannedBarcode;
   String _productName = '';
   String _productQty = '';
+
+  // Variable pour stocker TOUTES les infos du produit (calories, image, marque, etc.)
+  Map<String, dynamic>? _scannedProductData;
 
   // ── Contrôleur de la caméra ─────────────────────────────────────
   final MobileScannerController _cameraController = MobileScannerController();
@@ -57,6 +60,10 @@ class _ScanPageState extends State<ScanPage> {
       setState(() {
         _productName = result['name'] ?? 'Produit inconnu';
         _productQty = result['quantity'] ?? '';
+
+        // On garde tout l'objet en mémoire (avec calories, imageUrl, brand...)
+        _scannedProductData = result;
+
         _hasResult = true;
         _isLoading = false;
       });
@@ -64,6 +71,7 @@ class _ScanPageState extends State<ScanPage> {
       setState(() {
         _productName = 'Produit non trouvé';
         _productQty = '';
+        _scannedProductData = null;
         _hasResult = true;
         _isLoading = false;
       });
@@ -77,6 +85,7 @@ class _ScanPageState extends State<ScanPage> {
       _scannedBarcode = null;
       _productName = '';
       _productQty = '';
+      _scannedProductData = null; // On vide la mémoire du produit
     });
     _cameraController.start();
   }
@@ -368,13 +377,39 @@ class _ScanPageState extends State<ScanPage> {
 
                   print("TOKEN RÉCUPÉRÉ: $storedToken");
 
-                  // CORRECTION : On passe maintenant l'attribut 'barcode' et une quantité de type double (1.0)
+                  // Sécurisation et extraction propre des valeurs reçues de l'API
+                  final String rawType = (_scannedProductData?['type'] ?? '')
+                      .toString();
+                  final String cleanType = rawType.contains(':')
+                      ? rawType.split(':').first
+                      : (rawType.isNotEmpty ? rawType : 'Aliment');
+
+                  final String rawCategory =
+                      (_scannedProductData?['categorie'] ?? '').toString();
+                  final String cleanCategory = rawCategory.length > 50
+                      ? rawCategory.substring(0, 50)
+                      : rawCategory;
+
+                  // Traduction et mise en forme des clés pour correspondre exactement à l'API Node.js
                   final Map<String, dynamic> itemData = {
-                    'name': _productName,
-                    'quantity': 1.0,
-                    'unit': _productQty,
-                    'barcode': _scannedBarcode, // Ajout de la clé barcode ici !
+                    'nom': _productName,
+                    'quantite': 1.0,
+                    'unite': _productQty.isNotEmpty ? _productQty : 'pcs',
+                    'barcode': _scannedBarcode,
+                    'calories': _scannedProductData?['calories'] ?? 0.0,
+                    'proteines': _scannedProductData?['proteines'] ?? 0.0,
+                    'glucides': _scannedProductData?['glucides'] ?? 0.0,
+                    'lipides': _scannedProductData?['lipides'] ?? 0.0,
+                    'marque': _scannedProductData?['brand'] ?? 'Inconnu',
+                    'imageUrl': _scannedProductData?['imageUrl'] ?? '',
+                    'categorie': cleanCategory.isNotEmpty
+                        ? cleanCategory
+                        : 'Divers',
+                    'type': cleanType,
+                    'allergenes': _scannedProductData?['allergenes'] ?? '',
                   };
+
+                  print("DEBUG ENVOI FLUTTER -> $itemData");
 
                   final success = await IngredientService.addItem(
                     storedToken,
@@ -386,6 +421,7 @@ class _ScanPageState extends State<ScanPage> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('✅ Ajouté à l\'inventaire !'),
+                        backgroundColor: Colors.green,
                       ),
                     );
                     _reset();
@@ -393,7 +429,10 @@ class _ScanPageState extends State<ScanPage> {
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('❌ Erreur lors de l\'ajout'),
+                        content: Text(
+                          '❌ Erreur lors de l\'ajout côté serveur (Code 500)',
+                        ),
+                        backgroundColor: Colors.red,
                       ),
                     );
                   }

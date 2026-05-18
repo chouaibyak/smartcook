@@ -10,7 +10,6 @@ class IngredientService {
         Uri.parse(ApiConstants.inventory),
         headers: {
           'Content-Type': 'application/json',
-          // Correction ici : un seul espace après Bearer pour éviter le bug 401
           'Authorization': 'Bearer $token',
         },
       );
@@ -24,22 +23,41 @@ class IngredientService {
     }
   }
 
-  // Ajouter un item à l'inventaire (Ajoute une ligne dans la table `aliment`)
+  // Ajouter un item à l'inventaire (Modifié pour envoyer TOUTES les données à la table `aliment`)
   static Future<bool> addItem(String token, Map<String, dynamic> item) async {
     try {
-      // On adapte les clés pour correspondre EXACTEMENT aux colonnes de ta table `aliment`
+      // On prépare le dictionnaire avec TOUTES les valeurs nutritionnelles et détails
       final Map<String, dynamic> backendData = {
         "nom": item['name'] ?? item['nom'],
         "quantite": item['quantity'] != null
             ? double.tryParse(item['quantity'].toString()) ?? 1.0
-            : 1.0, // Double comme dans ton SQL
+            : 1.0,
         "unite": item['unit'] ?? 'pcs',
-        "barcode": item['barcode'], // <-- AJOUT DE LA COLONNE BARCODE ICI
-        "dateExpiration":
-            item['dateExpiration'], // Correspond à ton fichier SQL
+        "barcode": item['barcode'],
+        "dateExpiration": item['dateExpiration'],
+
+        // --- AJOUTS : Envoi des nouvelles données à Node.js ---
+        "type": item['type'],
+        "calories": item['calories'] != null
+            ? double.tryParse(item['calories'].toString())
+            : null,
+        "proteines": item['proteines'] != null
+            ? double.tryParse(item['proteines'].toString())
+            : null,
+        "glucides": item['glucides'] != null
+            ? double.tryParse(item['glucides'].toString())
+            : null,
+        "lipides": item['lipides'] != null
+            ? double.tryParse(item['lipides'].toString())
+            : null,
+        "allergenes": item['allergenes'],
+        "marque":
+            item['brand'] ?? item['marque'], // Gère les deux alias possibles
+        "categorie": item['categorie'],
+        "imageUrl": item['imageUrl'],
       };
 
-      print("DEBUG: Envoi de l'aliment au backend -> $backendData");
+      print("DEBUG: Envoi de l'aliment complet au backend -> $backendData");
 
       final response = await http.post(
         Uri.parse(ApiConstants.inventory),
@@ -75,7 +93,7 @@ class IngredientService {
     }
   }
 
-  // Lookup OpenFoodFacts par barcode (Fidèle à ton interface ServiceOpenFoodFacts du diagramme)
+  // Lookup OpenFoodFacts (Modifié pour extraire l'image, les calories, etc.)
   static Future<Map<String, dynamic>> lookupBarcode(String barcode) async {
     final url = Uri.parse(
       'https://world.openfoodfacts.org/api/v0/product/$barcode.json',
@@ -86,12 +104,27 @@ class IngredientService {
       final data = jsonDecode(response.body);
       if (data['status'] == 1) {
         final product = data['product'];
+        final nutriments = product['nutriments'] ?? {};
+
         return {
           'name': product['product_name'] ?? 'Produit inconnu',
-          'quantity': product['quantity'] ?? '',
+          'quantity': '1', // Par défaut pour le scan initial
           'brand': product['brands'] ?? '',
-          'barcode':
-              barcode, // On garde le barcode en mémoire pour l'ajouter plus tard !
+          'barcode': barcode,
+
+          // --- AJOUTS : Récupération des données depuis l'API OpenFoodFacts ---
+          'imageUrl': product['image_front_url'] ?? product['image_url'] ?? '',
+          'calories':
+              nutriments['energy-kcal_100g'] ?? nutriments['energy-kcal'] ?? '',
+          'proteines': nutriments['proteins_100g'] ?? '',
+          'glucides': nutriments['carbohydrates_100g'] ?? '',
+          'lipides': nutriments['fat_100g'] ?? '',
+          'allergenes': product['allergens'] ?? '',
+          'categorie': product['categories'] ?? '',
+          'type':
+              product['ingredients_text_fr'] ??
+              product['ingredients_text'] ??
+              '',
         };
       }
     }
