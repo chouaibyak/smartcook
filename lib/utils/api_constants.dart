@@ -5,4 +5,6 @@ class ApiConstants {
   static const String register = '$baseUrl/auth/register';
   static const String login = '$baseUrl/auth/login';
   static const String completeProfile = '$baseUrl/user/complete-profile';
+  static const String inventory = '$baseUrl/inventory';
+  static const String aliments = '$baseUrl/aliments';
 }

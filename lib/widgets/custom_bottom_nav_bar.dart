@@ -10,7 +10,6 @@ class CustomBottomNav extends StatelessWidget {
     required this.onTap,
   });
 
-  // 🎯 اللون الرسمي ديال المشروع
   static const Color primaryColor = Color(0xFF1F6F4A);
 
   @override

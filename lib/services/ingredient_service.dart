@@ -1,10 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/ingredient_model.dart';
+import '../utils/api_constants.dart';
 
 class IngredientService {
-static const String baseUrl = 'http://localhost:3000/api';
-
   static final IngredientService _instance = IngredientService._internal();
   factory IngredientService() => _instance;
   IngredientService._internal();
@@ -28,7 +27,7 @@ static const String baseUrl = 'http://localhost:3000/api';
 
   Future<List<Ingredient>> getAllIngredients() async {
     final response = await http.get(
-      Uri.parse('$baseUrl/inventory'),
+      Uri.parse(ApiConstants.inventory),
       headers: _getHeaders(),
     );
 
@@ -46,7 +45,7 @@ static const String baseUrl = 'http://localhost:3000/api';
 
   Future<void> addIngredient(Ingredient ingredient) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/inventory'),
+      Uri.parse(ApiConstants.inventory),
       headers: _getHeaders(),
       body: json.encode(ingredient.toJson()),
     );
@@ -58,7 +57,7 @@ static const String baseUrl = 'http://localhost:3000/api';
 
   Future<void> updateIngredient(int id, Ingredient ingredient) async {
     final response = await http.put(
-      Uri.parse('$baseUrl/inventory/$id'),
+      Uri.parse('${ApiConstants.inventory}/$id'),
       headers: _getHeaders(),
       body: json.encode(ingredient.toJson()),
     );
@@ -70,7 +69,7 @@ static const String baseUrl = 'http://localhost:3000/api';
 
   Future<void> deleteIngredient(int id) async {
     final response = await http.delete(
-      Uri.parse('$baseUrl/inventory/$id'),
+      Uri.parse('${ApiConstants.inventory}/$id'),
       headers: _getHeaders(),
     );
 

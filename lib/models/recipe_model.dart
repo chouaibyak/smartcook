@@ -14,6 +14,7 @@ class Recipe {
   final String benefices;
   final String conseilsSante;
   final double scoreCompatibilite;
+  final String? imageUrl;
 
   Recipe({
     required this.id,
@@ -31,6 +32,7 @@ class Recipe {
     required this.benefices,
     required this.conseilsSante,
     required this.scoreCompatibilite,
+    this.imageUrl,
   });
 
   factory Recipe.fromJson(Map<String, dynamic> json) {
@@ -51,6 +53,7 @@ class Recipe {
       conseilsSante: json['conseilsSante'] ?? '',
       scoreCompatibilite:
           double.tryParse(json['scoreCompatibilite'].toString()) ?? 0,
+      imageUrl: json['imageUrl'],
     );
   }
 }
