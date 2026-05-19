@@ -1,12 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const inventoryController = require('../controllers/inventoryController');
 const authMiddleware = require('../middleware/authMiddleware');
+const inventoryController = require('../controllers/inventoryController');
 
-// Toutes les routes inventory nécessitent un token JWT
-router.get('/',        authMiddleware, inventoryController.getInventory);
-router.post('/',       authMiddleware, inventoryController.addItem);
-router.put('/:id',     authMiddleware, inventoryController.updateItem);
-router.delete('/:id',  authMiddleware, inventoryController.deleteItem);
+// Toutes les routes inventory ci-dessous nécessitent un token JWT
+router.use(authMiddleware);
+
+// Endpoints (Sémantique claire axée sur les ingrédients)
+router.get('/', inventoryController.getAllIngredients || inventoryController.getInventory);
+router.post('/', inventoryController.addIngredient || inventoryController.addItem);
+router.put('/:id', inventoryController.updateIngredient || inventoryController.updateItem);
+router.delete('/:id', inventoryController.deleteIngredient || inventoryController.deleteItem);
 
 module.exports = router;

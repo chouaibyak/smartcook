@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import 'register_screen.dart';
 import '../services/auth_service.dart';
+import '../services/ingredient_service.dart';
+import '../providers/ingredient_provider.dart';
 import 'home_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,10 +27,13 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isLoading = false;
   bool obscurePassword = true;
 
-  void showMessage(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: green));
+  void showMessage(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : green,
+      ),
+    );
   }
 
   void validateLogin() async {
@@ -34,35 +41,58 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      showMessage("Please fill in all fields");
+      showMessage("Please fill in all fields", isError: true);
       return;
     }
 
     if (!email.contains("@") || !email.contains(".")) {
-      showMessage("Please enter a valid email address");
+      showMessage("Please enter a valid email address", isError: true);
       return;
     }
 
     setState(() => isLoading = true);
 
-    //Appel backend
+    // Appel backend
     final result = await AuthService.login(email, password);
 
     setState(() => isLoading = false);
 
     if (result != null && result.containsKey('token')) {
-      // Sauvegarder le token dans SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('token', result['token']);
-      showMessage("Login success Welcome ${result['user']?['nom'] ?? ''}");
-    } else {
-      showMessage(result?['message'] ?? "Login failed");
-    }
+      final token = result['token'];
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const HomeScreen()),
-    );
+      print("LOGIN RESULT: $result");
+      print("USER FROM LOGIN: ${result['user']}");
+      print("TOKEN FROM LOGIN: ${result['token']}");
+
+      // --- 1. TA LOGIQUE : Sauvegarder le token localement ---
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', token);
+
+      // --- 2. LOGIQUE ÉQUIPE : Configurer les instances de services avec le token ---
+      final ingredientService = IngredientService();
+      ingredientService.setToken(token);
+
+      final apiService = ApiService();
+      apiService.setToken(token);
+
+      // Réinitialiser et charger les ingrédients de l'inventaire
+      final ingredientProvider = Provider.of<IngredientProvider>(
+        context,
+        listen: false,
+      );
+      ingredientProvider.clearData();
+      await ingredientProvider.fetchIngredients();
+
+      showMessage("Login success! Welcome ${result['user']?['nom'] ?? ''}");
+
+      // Navigation vers HomeScreen en passant le résultat au besoin
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen(result: result)),
+      );
+    } else {
+      showMessage(result?['message'] ?? "Login failed", isError: true);
+    }
   }
 
   @override

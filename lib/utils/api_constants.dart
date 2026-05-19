@@ -7,8 +7,9 @@ class ApiConstants {
   static const String login = '$baseUrl/auth/login';
   static const String completeProfile = '$baseUrl/user/complete-profile';
 
-  // Inventory
+  // Inventory & Aliments
   static const String inventory = '$baseUrl/inventory';
+  static const String aliments = '$baseUrl/aliments';
 
   // Recipes
   static const String recipes = '$baseUrl/recipes';

@@ -1,9 +1,49 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../models/ingredient_model.dart';
 import '../utils/api_constants.dart';
 
 class IngredientService {
-  // Récupérer tous les items de l'inventaire
+  static final IngredientService _instance = IngredientService._internal();
+  factory IngredientService() => _instance;
+  IngredientService._internal();
+
+  String? _token;
+
+  void setToken(String token) {
+    _token = token;
+  }
+
+  Map<String, String> _getHeaders() {
+    if (_token == null || _token!.isEmpty) {
+      throw Exception('Token manquant. Veuillez vous reconnecter.');
+    }
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $_token',
+    };
+  }
+
+  // Récupérer tous les ingrédients (Version équipe typée avec le modèle)
+  Future<List<Ingredient>> getAllIngredients() async {
+    final response = await http.get(
+      Uri.parse(ApiConstants.inventory),
+      headers: _getHeaders(),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((json) => Ingredient.fromJson(json)).toList();
+    }
+
+    if (response.statusCode == 401) {
+      throw Exception('Session expirée. Veuillez vous reconnecter.');
+    }
+
+    throw Exception('Erreur chargement inventaire: ${response.statusCode}');
+  }
+
+  // Version statique ou dictionnaire pour compatibilité directe avec ton écran de scan
   static Future<List<dynamic>> getInventory(String token) async {
     try {
       final response = await http.get(
@@ -23,10 +63,9 @@ class IngredientService {
     }
   }
 
-  // Ajouter un item à l'inventaire (Modifié pour envoyer TOUTES les données à la table `aliment`)
+  // Ajouter un aliment (Version modifiée pour envoyer TOUTES les données enrichies de ton scan)
   static Future<bool> addItem(String token, Map<String, dynamic> item) async {
     try {
-      // On prépare le dictionnaire avec TOUTES les valeurs nutritionnelles et détails
       final Map<String, dynamic> backendData = {
         "nom": item['name'] ?? item['nom'],
         "quantite": item['quantity'] != null
@@ -35,8 +74,6 @@ class IngredientService {
         "unite": item['unit'] ?? 'pcs',
         "barcode": item['barcode'],
         "dateExpiration": item['dateExpiration'],
-
-        // --- AJOUTS : Envoi des nouvelles données à Node.js ---
         "type": item['type'],
         "calories": item['calories'] != null
             ? double.tryParse(item['calories'].toString())
@@ -51,8 +88,7 @@ class IngredientService {
             ? double.tryParse(item['lipides'].toString())
             : null,
         "allergenes": item['allergenes'],
-        "marque":
-            item['brand'] ?? item['marque'], // Gère les deux alias possibles
+        "marque": item['brand'] ?? item['marque'],
         "categorie": item['categorie'],
         "imageUrl": item['imageUrl'],
       };
@@ -76,7 +112,33 @@ class IngredientService {
     }
   }
 
-  // Supprimer un item de l'inventaire
+  // Ajouter un ingrédient via l'objet du modèle (Méthode équipe)
+  Future<void> addIngredient(Ingredient ingredient) async {
+    final response = await http.post(
+      Uri.parse(ApiConstants.inventory),
+      headers: _getHeaders(),
+      body: json.encode(ingredient.toJson()),
+    );
+
+    if (response.statusCode != 201 && response.statusCode != 200) {
+      throw Exception('Erreur ajout aliment: ${response.statusCode}');
+    }
+  }
+
+  // Mettre à jour un ingrédient
+  Future<void> updateIngredient(int id, Ingredient ingredient) async {
+    final response = await http.put(
+      Uri.parse('${ApiConstants.inventory}/$id'),
+      headers: _getHeaders(),
+      body: json.encode(ingredient.toJson()),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Erreur mise à jour aliment: ${response.statusCode}');
+    }
+  }
+
+  // Supprimer un ingrédient (Statique pour ton scan)
   static Future<bool> deleteItem(String token, int id) async {
     try {
       final response = await http.delete(
@@ -93,7 +155,19 @@ class IngredientService {
     }
   }
 
-  // Lookup OpenFoodFacts (Modifié pour extraire l'image, les calories, etc.)
+  // Supprimer un ingrédient (Instance pour l'équipe)
+  Future<void> deleteIngredient(int id) async {
+    final response = await http.delete(
+      Uri.parse('${ApiConstants.inventory}/$id'),
+      headers: _getHeaders(),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Erreur suppression aliment: ${response.statusCode}');
+    }
+  }
+
+  // Ton service indispensable de scan OpenFoodFacts
   static Future<Map<String, dynamic>> lookupBarcode(String barcode) async {
     final url = Uri.parse(
       'https://world.openfoodfacts.org/api/v0/product/$barcode.json',
@@ -108,11 +182,9 @@ class IngredientService {
 
         return {
           'name': product['product_name'] ?? 'Produit inconnu',
-          'quantity': '1', // Par défaut pour le scan initial
+          'quantity': '1',
           'brand': product['brands'] ?? '',
           'barcode': barcode,
-
-          // --- AJOUTS : Récupération des données depuis l'API OpenFoodFacts ---
           'imageUrl': product['image_front_url'] ?? product['image_url'] ?? '',
           'calories':
               nutriments['energy-kcal_100g'] ?? nutriments['energy-kcal'] ?? '',

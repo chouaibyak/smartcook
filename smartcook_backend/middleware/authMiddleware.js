@@ -9,9 +9,14 @@ module.exports = (req, res, next) => {
 
         const token = authHeader.split(' ')[1];
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        
-        // req.user.id pour être cohérent avec les controllers
+
+        // Debug (pratique pour les tests avec Flutter)
+        console.log("CONTENU DU TOKEN DÉCODÉ :", decoded); 
+
+        // Double assignation pour satisfaire HEAD et main (Zéro conflit dans les contrôleurs !)
         req.user = { id: decoded.id };
+        req.userId = decoded.id;
+
         next();
     } catch (error) {
         res.status(401).json({ message: 'Token invalide' });
