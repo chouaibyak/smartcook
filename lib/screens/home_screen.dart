@@ -15,6 +15,7 @@ import 'profile_screen.dart';
 
 import '../widgets/custom_app_bar.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
+import 'chatbot_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final Map<String, dynamic>? result;
@@ -116,6 +117,23 @@ class _HomeScreenState extends State<HomeScreen> {
       body: IndexedStack(
         index: currentIndex,
         children: pages,
+      ),
+
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFFFF9F43),
+        foregroundColor: const Color(0xFF5A2200),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ChatbotScreen(
+                token: widget.result?['token'],
+                selectedBottomNavIndex: bottomNavIndex,
+              ),
+            ),
+          );
+        },
+        child: const Icon(Icons.support_agent),
       ),
 
       // Bottom navigation bar
@@ -688,30 +706,6 @@ class SuggestedRecipeCard extends StatelessWidget {
           ),
         ),
 
-        Positioned(
-          bottom: -55,
-          right: 20,
-          child: Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFF9F43),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFFF9F43).withOpacity(0.4),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.support_agent,
-              color: Color(0xFF5A2200),
-              size: 24,
-            ),
-          ),
-        ),
       ],
     );
   }
