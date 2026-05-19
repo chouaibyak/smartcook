@@ -66,7 +66,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => isLoading = true);
 
-     // Appel au backend
+    // Appel au backend
     final result = await AuthService.register(
       "${firstNameController.text} ${lastNameController.text}",
       emailController.text.trim(),
@@ -75,48 +75,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => isLoading = false);
 
-   if (result != null && result.containsKey('token')) {
+    if (result != null && result.containsKey('token')) {
+      final token = result['token'];
 
-  final token = result['token'];
+      // LOGIQUE ÉQUIPE : sauvegarde du token dans les instances de service
+      IngredientService().setToken(token);
+      ApiService().setToken(token);
 
-  //  sauvegarde du token
-  IngredientService().setToken(token);
-  ApiService().setToken(token);
+      // Reset des anciennes données du provider
+      final ingredientProvider = Provider.of<IngredientProvider>(
+        context,
+        listen: false,
+      );
+      ingredientProvider.clearData();
 
-  //  reset anciennes données
-  final ingredientProvider = Provider.of<IngredientProvider>(
-    context,
-    listen: false,
-  );
+      // Recharge les données pour le nouvel utilisateur (inventaire à vide)
+      await ingredientProvider.fetchIngredients();
 
-  ingredientProvider.clearData();
+      showMessage("Account created successfully ✅");
 
-  //  recharge données new user
-  await ingredientProvider.fetchIngredients();
-
-  showMessage("Account created successfully ✅");
-
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(
-      builder: (context) => InitialProfileScreen(
-  token: token,
-  result: result,
-)
-    ),
-  );
-} else {
+      // Navigation vers l'écran suivant avec les arguments combinés
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              InitialProfileScreen(token: token, result: result),
+        ),
+      );
+    } else {
       showMessage(result?['message'] ?? "Registration failed");
     }
   }
 
   void showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: green,
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: green));
   }
 
   @override
@@ -137,12 +131,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: const Color(0xFFB5C3B8)),
         ),
-        child: Center(
-          child: Text(
-            text,
-            style: const TextStyle(fontSize: 19),
-          ),
-        ),
+        child: Center(child: Text(text, style: const TextStyle(fontSize: 19))),
       ),
     );
   }

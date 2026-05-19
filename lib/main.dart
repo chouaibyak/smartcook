@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:smartcook/screens/home_screen.dart';
 import 'package:smartcook/screens/register_screen.dart';
 import 'providers/auth_provider.dart';
-import 'providers/ingredient_provider.dart';  
+import 'providers/ingredient_provider.dart';
 import 'providers/recipe_provider.dart';
 
 void main() {
@@ -18,9 +18,8 @@ class SmartCookApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => IngredientProvider()),  
+        ChangeNotifierProvider(create: (_) => IngredientProvider()),
         ChangeNotifierProvider(create: (_) => RecipeProvider()),
-
       ],
       child: const MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -29,4 +28,3 @@ class SmartCookApp extends StatelessWidget {
     );
   }
 }
-

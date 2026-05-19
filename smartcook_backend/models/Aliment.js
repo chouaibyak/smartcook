@@ -3,26 +3,26 @@ const Inventory = require('./Inventory');
 
 class Aliment {
 
- 
-
   static async create(userId, data) {
     try {
       // 1. Récupérer ou créer l'inventaire lié à l'utilisateur
       const inventory = await Inventory.getOrCreate(userId);
 
+      // ✅ CORRIGÉ : Ajout de la colonne barcode dans le INSERT
       const query = `INSERT INTO aliment 
-        (idInventaire, nom, quantite, unite, type, dateExpiration, 
+        (idInventaire, nom, quantite, unite, type, dateExpiration, barcode,
          calories, proteines, glucides, lipides, allergenes, 
          marque, categorie, imageUrl, statut) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
       const values = [
-        inventory.id, // On utilise l'ID trouvé juste au-dessus
+        inventory.id, 
         data.nom || 'Inconnu',
         data.quantite || 1,
         data.unite || 'pcs',
         data.type || 'autre',
         data.dateExpiration || null,
+        data.barcode || null, // ✅ Ajouté ici
         data.calories || 0,
         data.proteines || 0,
         data.glucides || 0,
@@ -34,12 +34,9 @@ class Aliment {
         data.statut || 'disponible'
       ];
 
-
-      console.log(values);
-      // On utilise await (db doit être configuré avec .promise())
+      console.log("Insertion aliment :", values);
       const [result] = await db.query(query, values);
-
-      return result.insertId; // Retourne l'ID de l'aliment créé
+      return result.insertId; 
 
     } catch (error) {
       console.error('Erreur dans Aliment.create:', error.message);
@@ -51,8 +48,7 @@ class Aliment {
   static async findAllByUser(userId) {
     try {
       const [rows] = await db.query(
-        `SELECT a.* 
-         FROM aliment a
+        `SELECT a.* FROM aliment a
          JOIN inventaire i ON a.idInventaire = i.id
          WHERE i.idUtilisateur = ?
          ORDER BY a.dateExpiration ASC`,
@@ -69,8 +65,7 @@ class Aliment {
   static async findById(id, userId) {
     try {
       const [rows] = await db.query(
-        `SELECT a.* 
-         FROM aliment a
+        `SELECT a.* FROM aliment a
          JOIN inventaire i ON a.idInventaire = i.id
          WHERE a.id = ? AND i.idUtilisateur = ?`,
         [id, userId]
@@ -97,31 +92,28 @@ class Aliment {
 
       const [result] = await db.query(
         `UPDATE aliment a
-   JOIN inventaire i ON a.idInventaire = i.id
-   SET
-     a.nom = ?, a.quantite = ?, a.unite = ?, a.type = ?,
-     a.dateExpiration = ?, a.calories = ?, a.proteines = ?,
-     a.glucides = ?, a.lipides = ?, a.allergenes = ?,
-     a.marque = ?, a.categorie = ?, a.barcode = ?,
-     a.imageUrl = ?, a.statut = ?
-   WHERE a.id = ? AND i.idUtilisateur = ?`,
+         JOIN inventaire i ON a.idInventaire = i.id
+         SET
+           a.nom = ?, a.quantite = ?, a.unite = ?, a.type = ?,
+           a.dateExpiration = ?, a.calories = ?, a.proteines = ?,
+           a.glucides = ?, a.lipides = ?, a.allergenes = ?,
+           a.marque = ?, a.categorie = ?, a.barcode = ?,
+           a.imageUrl = ?, a.statut = ?
+         WHERE a.id = ? AND i.idUtilisateur = ?`,
         [
           nom, quantite, unite, type, formattedDate,
           calories || 0, proteines || 0, glucides || 0, lipides || 0,
           allergenes || 'Aucun', marque || 'Générique', categorie || 'Inconnu',
-          barcode || null, imageUrl || '', statut || 'available',
+          barcode || null, imageUrl || '', statut || 'disponible',
           id, userId
         ]
       );
       return result.affectedRows > 0;
-      console.log("UPDATE BODY:", req.body);
-      console.log("UPDATE PARAMS:", { id, userId });
     } catch (error) {
       console.error('Erreur update:', error);
       return false;
     }
   }
-
 
   // Supprimer un aliment
   static async delete(id, userId) {
@@ -146,7 +138,7 @@ class Aliment {
         `SELECT a.id FROM aliment a
          JOIN inventaire i ON a.idInventaire = i.id
          WHERE a.id = ? AND i.idUtilisateur = ?`,
-        [id, userId]
+         [id, userId]
       );
       return rows.length > 0;
     } catch (error) {
