@@ -2,14 +2,16 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:smartcook/screens/recipe_detail_screen.dart';
 
 import '../models/recipe_model.dart';
 import '../providers/recipe_provider.dart';
 
 class RecipesPage extends StatefulWidget {
   final String? token;
+  final ValueChanged<int>? onNavigate;
 
-  const RecipesPage({super.key, this.token});
+  const RecipesPage({super.key, this.token, this.onNavigate});
 
   @override
   State<RecipesPage> createState() => _RecipesPageState();
@@ -90,10 +92,37 @@ class _RecipesPageState extends State<RecipesPage> {
 
       final selected = _categories[_selectedCategory].toLowerCase();
       final matchesCategory = selected == 'all meals' ||
-          recipe.typeRepas.toLowerCase().contains(selected);
+          _mealCategoryOf(recipe.typeRepas) == selected;
 
       return matchesSearch && matchesCategory;
     }).toList();
+  }
+
+  String _mealCategoryOf(String typeRepas) {
+    final value = typeRepas
+        .toLowerCase()
+        .replaceAll('é', 'e')
+        .replaceAll('è', 'e')
+        .replaceAll('ê', 'e')
+        .replaceAll('î', 'i')
+        .replaceAll('ï', 'i');
+
+    if (value.contains('breakfast') ||
+        value.contains('dejeuner') ||
+        value.contains('petit dejeuner') ||
+        value.contains('petit-dejeuner')) {
+      return 'breakfast';
+    }
+
+    if (value.contains('lunch')) {
+      return 'lunch';
+    }
+
+    if (value.contains('dinner') || value.contains('diner')) {
+      return 'dinner';
+    }
+
+    return value;
   }
 
   Widget _buildSearchBar() {
@@ -301,122 +330,139 @@ class _RecipesPageState extends State<RecipesPage> {
   }
 
   Widget _buildRecipeCard(Recipe recipe) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.hardEdge,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              SizedBox(
-                width: double.infinity,
-                height: 180,
-                child: Image.network(
-                  recipe.imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.image, size: 48, color: Colors.grey),
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 12,
-                left: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2D6A4F),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.bolt, color: Colors.white, size: 13),
-                      const SizedBox(width: 3),
-                      Text(
-                        '${recipe.scoreCompatibilite.toStringAsFixed(0)}% AI Match',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  recipe.nom,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A1A),
-                    height: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 14,
-                  runSpacing: 8,
-                  children: [
-                    _buildInfoChip(
-                      Icons.access_time_outlined,
-                      '${recipe.tempsPreparation} min',
-                    ),
-                    _buildInfoChip(
-                      Icons.local_fire_department_outlined,
-                      '${recipe.calories.toStringAsFixed(0)} kcal',
-                    ),
-                    _buildInfoChip(Icons.bar_chart, recipe.difficulte),
-                    _buildInfoChip(Icons.restaurant, recipe.typeRepas),
-                  ],
-                ),
-                if (recipe.benefices.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    recipe.benefices,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF666666),
-                      height: 1.35,
-                    ),
-                  ),
-                ],
-                if (recipe.conseilsSante.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  Text(
-                    recipe.conseilsSante,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF2D6A4F),
-                      height: 1.35,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ],
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RecipeDetailScreen(
+              recipe: recipe,
+              onNavigate: widget.onNavigate,
             ),
           ),
-        ],
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.hardEdge,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  height: 180,
+                  child: Image.network(
+                    recipe.imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: Colors.grey[200],
+                      child: const Icon(
+                        Icons.image,
+                        size: 48,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2D6A4F),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.bolt, color: Colors.white, size: 13),
+                        const SizedBox(width: 3),
+                        Text(
+                          '${recipe.scoreCompatibilite.toStringAsFixed(0)}% AI Match',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    recipe.nom,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1A1A1A),
+                      height: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 14,
+                    runSpacing: 8,
+                    children: [
+                      _buildInfoChip(
+                        Icons.access_time_outlined,
+                        '${recipe.tempsPreparation} min',
+                      ),
+                      _buildInfoChip(
+                        Icons.local_fire_department_outlined,
+                        '${recipe.calories.toStringAsFixed(0)} kcal',
+                      ),
+                      _buildInfoChip(Icons.bar_chart, recipe.difficulte),
+                      _buildInfoChip(Icons.restaurant, recipe.typeRepas),
+                    ],
+                  ),
+                  if (recipe.benefices.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      recipe.benefices,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF666666),
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                  if (recipe.conseilsSante.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      recipe.conseilsSante,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF2D6A4F),
+                        height: 1.35,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

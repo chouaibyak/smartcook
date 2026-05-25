@@ -84,7 +84,10 @@ class _HomeScreenState extends State<HomeScreen> {
       //const AiScanScreen(),
 
       // Index 4 → Recipes
-      RecipesPage(token: widget.result?['token']?.toString()),
+      RecipesPage(
+        token: widget.result?['token']?.toString(),
+        onNavigate: onTabTapped,
+      ),
 
       // Index 5 → Shopping List
       const ListPage(),
@@ -289,16 +292,7 @@ class HomePage extends StatelessWidget {
                 child: QuickActionButton(
                   title: "Generate recipe",
                   icon: Icons.restaurant_menu,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => RecipesPage(
-                          token: result?['token']?.toString(),
-                        ),
-                      ),
-                    );
-                  },
+                  onTap: () => onNavigate(3),
                 ),
               ),
 
@@ -337,16 +331,7 @@ class HomePage extends StatelessWidget {
               badge:
                   "${suggestedRecipe.difficulte} • ${suggestedRecipe.tempsPreparation} min",
               imageUrl: suggestedRecipe.imageUrl,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => RecipesPage(
-                      token: result?['token']?.toString(),
-                    ),
-                  ),
-                );
-              },
+              onTap: () => onNavigate(3),
             ),
 
           const SizedBox(height: 40),

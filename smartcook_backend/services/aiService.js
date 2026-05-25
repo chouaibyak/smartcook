@@ -23,10 +23,18 @@ const parseJsonResponse = (text) => {
         .trim();
 
     const parsed = JSON.parse(cleaned);
-    return Array.isArray(parsed) ? parsed.slice(0, 5) : [];
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.slice(0, 5).map(recipe => {
+        if (Array.isArray(recipe.etapes)) {
+            recipe.etapes = JSON.stringify(recipe.etapes);
+        }
+
+        return recipe;
+    });
 };
 
-exports.generateRecipesFromData = async (profile, ingredients) => {
+exports.generateRecipesFromData = async (profile, ingredients, missingIngredients = []) => {
     const healthContext = `
     PROFIL NUTRITIONNEL DE L'UTILISATEUR :
     - Objectif : ${profile?.objectifNutritionnel || "Equilibre"}
@@ -36,21 +44,32 @@ exports.generateRecipesFromData = async (profile, ingredients) => {
     `;
 
     const ingredientsList = ingredients.map(i => `${i.quantite} ${i.unite} de ${i.nom}`).join(", ");
+    const missingIngredientsList = missingIngredients.length
+        ? missingIngredients.map(i => `${i.quantite} ${i.unite} de ${i.nom}`).join(", ")
+        : "Aucun ingredient missing deja declare";
 
     const prompt = `
     Tu es un expert en nutrition et chef cuisinier.
-    CONSIGNE : Genere exactement 5 recettes differentes basees EXCLUSIVEMENT sur ces ingredients.
+    CONSIGNE : Genere exactement 5 recettes differentes basees principalement sur les ingredients disponibles.
     Les recettes doivent etre variees, realistes, mangeables et adaptees au profil nutritionnel.
-    N'invente pas d'ingredients principaux absents. Tu peux seulement supposer eau, sel, poivre et epices simples.
+    Tu peux ajouter 0 a 3 ingredients manquants par recette si cela rend la recette plus complete.
+    Les ingredients manquants doivent etre des complements simples et realistes, pas l'ingredient principal de la recette.
     Le champ typeRepas doit etre exactement l'une de ces valeurs : "Breakfast", "Lunch", "Dinner".
     Utilise "Breakfast" pour dejeuner/petit-dejeuner, "Lunch" pour repas de midi, et "Dinner" pour diner.
     Genere une liste variee avec au moins une recette Breakfast et une recette Dinner si les ingredients peuvent convenir.
     Pour chaque recette, estime calories/proteines/glucides/lipides selon les quantites reellement utilisees.
     Les valeurs nutritionnelles doivent varier d'une recette a l'autre si les portions ou techniques changent.
+    Le champ etapes doit contenir uniquement les instructions de preparation, pas la liste des ingredients.
+    Separe toujours les instructions en 4 a 6 etapes numerotees, chacune sur une nouvelle ligne.
+    Pour chaque recette, remplis obligatoirement:
+    - ingredientsDisponibles: ingredients utilises qui existent dans INGREDIENTS DISPONIBLES.
+    - ingredientsManquants: ingredients necessaires qui ne sont pas dans INGREDIENTS DISPONIBLES.
+    Chaque ingredient doit avoir nom, quantite, unite. Si rien ne manque, mets [].
 
     ${healthContext}
 
     INGREDIENTS DISPONIBLES : ${ingredientsList}
+    INGREDIENTS MISSING DEJA DECLARES PAR L'UTILISATEUR : ${missingIngredientsList}
 
     FORMAT DE REPONSE : JSON pur uniquement, sans markdown.
     [
@@ -61,7 +80,13 @@ exports.generateRecipesFromData = async (profile, ingredients) => {
         "tempsPreparation": 30,
         "difficulte": "facile/moyen",
         "nbPersonnes": 2,
-        "etapes": "1. ...",
+        "ingredientsDisponibles": [
+          { "nom": "Nom ingredient disponible", "quantite": 2, "unite": "pieces" }
+        ],
+        "ingredientsManquants": [
+          { "nom": "Nom ingredient manquant", "quantite": 1, "unite": "piece" }
+        ],
+        "etapes": "1. Titre court: Description courte\\n2. Titre court: Description courte\\n3. Titre court: Description courte\\n4. Titre court: Description courte",
         "calories": 500,
         "proteines": 30,
         "glucides": 45,

@@ -12,6 +12,7 @@ exports.refreshRecipes = async (req, res) => {
         const profile = await Profile.getByUserId(userId);
         const allAliments = await Aliment.findAllByUser(userId);
         const availableIngredients = allAliments.filter(a => a.statut === 'disponible');
+        const missingIngredients = allAliments.filter(a => a.statut !== 'disponible');
 
         if (availableIngredients.length < 2) {
             return res.status(400).json({ message: "Ajoutez au moins 2 ingrédients." });
@@ -19,7 +20,8 @@ exports.refreshRecipes = async (req, res) => {
 
         const generatedRecipes = await aiService.generateRecipesFromData(
             profile,
-            availableIngredients
+            availableIngredients,
+            missingIngredients
         );
 
         if (!generatedRecipes || generatedRecipes.length === 0) {
@@ -66,6 +68,8 @@ exports.refreshRecipes = async (req, res) => {
             r.tempsPreparation,
             r.difficulte,
             r.nbPersonnes,
+            JSON.stringify(r.ingredientsDisponibles || []),
+            JSON.stringify(r.ingredientsManquants || []),
             r.etapes,
             r.calories,
             r.proteines,
