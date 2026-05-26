@@ -3,10 +3,8 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import 'initial_profile_screen.dart';
 import 'login_screen.dart';
-import '../services/auth_service.dart';
-import '../services/api_service.dart';
-import '../services/ingredient_service.dart';
 import '../providers/ingredient_provider.dart';
+import '../providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -18,7 +16,6 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   bool agree = false;
-  bool isLoading = false;
 
   final Color green = const Color(0xFF0B5D3B);
 
@@ -64,33 +61,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    setState(() => isLoading = true);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final fullName = "$firstName $lastName";
+    final success = await authProvider.register(fullName, email, password);
 
-    // Appel au backend
-    final result = await AuthService.register(
-      "${firstNameController.text} ${lastNameController.text}",
-      emailController.text.trim(),
-      passwordController.text,
-    );
+    if (!mounted) return;
 
-    setState(() => isLoading = false);
+    if (success) {
+      final user = authProvider.user;
+      final token = authProvider.token;
 
-    if (result != null && result.containsKey('token')) {
-      final token = result['token'];
+      if (token == null || token.isEmpty) {
+        showMessage("Token introuvable");
+        return;
+      }
 
       // LOGIQUE ÉQUIPE : sauvegarde du token dans les instances de service
-      IngredientService().setToken(token);
-      ApiService().setToken(token);
+    final ingredientProvider = Provider.of<IngredientProvider>(
+  context,
+  listen: false,
+);
 
-      // Reset des anciennes données du provider
-      final ingredientProvider = Provider.of<IngredientProvider>(
-        context,
-        listen: false,
-      );
-      ingredientProvider.clearData();
+ingredientProvider.setToken(token);
+ingredientProvider.clearData();
+await ingredientProvider.fetchIngredients();
 
-      // Recharge les données pour le nouvel utilisateur (inventaire à vide)
-      await ingredientProvider.fetchIngredients();
+      if (!mounted) return;
+
+      final result = {
+        'token': token,
+        'user': user?.toJson(),
+        'userId': user?.id,
+      };
 
       showMessage("Account created successfully ✅");
 
@@ -103,7 +105,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       );
     } else {
-      showMessage(result?['message'] ?? "Registration failed");
+      showMessage("Registration failed");
     }
   }
 
@@ -138,6 +140,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+
     print("REGISTER SCREEN BUILD");
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAF8),
@@ -282,7 +286,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     CustomButton(
                       text: "Register",
-                      isLoading: isLoading,
+                      isLoading: authProvider.isLoading,
                       onPressed: validateRegister,
                     ),
 

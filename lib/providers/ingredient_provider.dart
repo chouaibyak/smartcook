@@ -209,4 +209,10 @@ Future<void> fetchIngredients() async {
 
     return grouped;
   }
+
+
+  void setToken(String token) {
+  _service.setToken(token);
+  _apiService.setToken(token);
+}
 }

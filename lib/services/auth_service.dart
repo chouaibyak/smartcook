@@ -22,7 +22,6 @@ class AuthService {
     }
   }
 
-  // Connexion
 // Connexion
 static Future<Map<String, dynamic>?> login(String email, String password) async {
   try {
