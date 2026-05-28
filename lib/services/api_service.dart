@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../utils/api_constants.dart';
 
 class ApiService {
-  static const String baseUrl = "http://localhost:3000/api/aliments";
-
   // SINGLETON
   static final ApiService _instance = ApiService._internal();
 
@@ -26,43 +25,43 @@ class ApiService {
     };
   }
 
-Future<Map<String, dynamic>> analyzeIngredient(String name, String type) async {
-  final uri = Uri.parse('$baseUrl/analyze').replace(
-    queryParameters: {
-      'name': name,
-      'type': type,
-    },
-  );
+  Future<Map<String, dynamic>> analyzeIngredient(String name, String type) async {
+    final uri = Uri.parse('${ApiConstants.aliments}/analyze').replace(
+      queryParameters: {
+        'name': name,
+        'type': type,
+      },
+    );
 
-  final response = await http.get(
-    uri,
-    headers: _headers(),
-  );
+    final response = await http.get(
+      uri,
+      headers: _headers(),
+    );
 
-  print("ANALYZE STATUS: ${response.statusCode}");
-  print("ANALYZE BODY: ${response.body}");
+    print("ANALYZE STATUS: ${response.statusCode}");
+    print("ANALYZE BODY: ${response.body}");
 
-  if (response.statusCode == 200) {
-    return json.decode(response.body);
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    }
+
+    return {
+      "calories": 0,
+      "proteines": 0,
+      "glucides": 0,
+      "lipides": 0,
+      "allergenes": "Not provided",
+      "categorie": type,
+      "marque": "Unknown",
+      "imageUrl": ""
+    };
   }
-
-  return {
-    "calories": 0,
-    "proteines": 0,
-    "glucides": 0,
-    "lipides": 0,
-    "allergenes": "Not provided",
-    "categorie": type,
-    "marque": "Unknown",
-    "imageUrl": ""
-  };
-}
 
   Future<bool> saveIngredient(Map<String, dynamic> data) async {
     print("HEADERS: ${_headers()}");
 
     final response = await http.post(
-      Uri.parse('$baseUrl/add'),
+      Uri.parse('${ApiConstants.aliments}/add'),
       headers: _headers(),
       body: json.encode(data),
     );

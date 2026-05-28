@@ -1,11 +1,15 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const authRoutes = require('./routes/authRoutes');
-const userRoutes = require('./routes/userRoutes');
-const inventoryRoutes = require('./routes/inventoryRoutes'); 
-const alimentRoutes = require('./routes/alimentRoutes');
-const recipeRoutes = require('./routes/recipeRoutes');
+
+// Import de toutes les routes (Fusion HEAD + main)
+const authRoutes      = require('./routes/authRoutes');
+const userRoutes      = require('./routes/userRoutes');
+const inventoryRoutes = require('./routes/inventoryRoutes');
+const recipeRoutes    = require('./routes/recipeRoutes');
+const shoppingRoutes  = require('./routes/shoppingRoutes');
+const chatRoutes      = require('./routes/chatRoutes');
+const alimentRoutes   = require('./routes/alimentRoutes'); // Ajouté par l'équipeconst recipeRoutes = require('./routes/recipeRoutes');
 
 const app = express();
 
@@ -27,18 +31,21 @@ app.use((req, res, next) => {
     next();
 });
 
-// 3. Routes API
-app.use('/api/auth', authRoutes);
-app.use('/api/inventory', inventoryRoutes); 
-app.use('/api/user', userRoutes);
-app.use('/api/aliments', alimentRoutes);
-app.use('/api', recipeRoutes); 
+// 3. Routes API (Fusion complète de tous les endpoints)
+app.use('/api/auth',      authRoutes);
+app.use('/api/user',      userRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/recipes',   recipeRoutes);
+app.use('/api/shopping',  shoppingRoutes);
+app.use('/api/chat',      chatRoutes);
+app.use('/api/aliments',  alimentRoutes); // Ajouté par l'équipe
 
+// 4. Route de test
 app.get('/', (req, res) => {
     res.send("SmartCook API is running...");
 });
 
-// 4. Gestion des erreurs
+// 5. Gestion globale des erreurs
 app.use((err, req, res, next) => {
     console.error("SERVER ERROR:", err);
     res.status(500).json({

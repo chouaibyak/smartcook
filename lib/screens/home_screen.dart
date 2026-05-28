@@ -79,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const InventoryPage(),
 
       // Index 2 → Barcode Scanner
-      const BarcodeScanScreen(),
+      const ScanPage(),
 
       // Index 3 → AI Scan
       //const AiScanScreen(),
@@ -262,7 +262,7 @@ class HomePage extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const BarcodeScanScreen(),
+                        builder: (_) => const ScanPage(),
                       ),
                     );
                   },

@@ -1,10 +1,33 @@
+import 'package:flutter/foundation.dart';
+
 class ApiConstants {
-  // Adresse IP de ton serveur (10.0.2.2 pour l'émulateur Android)
-  static const String baseUrl = 'http://localhost:3000/api';
-  
-  static const String register = '$baseUrl/auth/register';
-  static const String login = '$baseUrl/auth/login';
-  static const String completeProfile = '$baseUrl/user/complete-profile';
-  static const String inventory = '$baseUrl/inventory';
-  static const String aliments = '$baseUrl/aliments';
+  static String get _host {
+    if (kIsWeb) {
+      return 'localhost';
+    }
+
+    return defaultTargetPlatform == TargetPlatform.android
+        ? '10.0.2.2'
+        : 'localhost';
+  }
+
+  static String get baseUrl => 'http://$_host:3000/api';
+
+  // Auth
+  static String get register => '$baseUrl/auth/register';
+  static String get login => '$baseUrl/auth/login';
+  static String get completeProfile => '$baseUrl/user/complete-profile';
+
+  // Inventory & Aliments
+  static String get inventory => '$baseUrl/inventory';
+  static String get aliments => '$baseUrl/aliments';
+
+  // Recipes
+  static String get recipes => '$baseUrl/recipes';
+
+  // Shopping
+  static String get shopping => '$baseUrl/shopping';
+
+  // Chat
+  static String get chat => '$baseUrl/chat';
 }
