@@ -51,12 +51,12 @@ Future<void> loadProfile() async {
   String getValue(String key) {
     final value = profile?[key];
 
-    if (value == null) return "Non renseigné";
+    if (value == null) return "Not provided";
 
     final text = value.toString();
 
     if (text.isEmpty || text == "[]" || text == "null") {
-      return "Non renseigné";
+      return "Not provided";
     }
 
     return text
@@ -84,7 +84,7 @@ Future<void> loadProfile() async {
       return const Scaffold(
         backgroundColor: Color(0xFFF4F4F4),
         body: Center(
-          child: Text("Impossible de charger le profil"),
+          child: Text("Unable to load profile"),
         ),
       );
     }

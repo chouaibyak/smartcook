@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:smartcook/providers/ingredient_provider.dart';
 import '../models/ingredient_model.dart';
 import '../providers/ingredient_provider.dart';
 import '../services/pdf_service.dart';
@@ -21,31 +20,227 @@ class _ListPageState extends State<ListPage> {
   static const Color textLight = Color(0xFF666666);
   static const Color orangeDark = Color(0xFFA33A00);
 
-  Future<void> markAsAvailable(Ingredient ingredient) async {
+  String _formatQuantity(double value) {
+    if (value == value.roundToDouble()) return value.toInt().toString();
+    return value.toStringAsFixed(1);
+  }
+
+  void showMarkAsAvailableForm(Ingredient ingredient) {
     final provider = Provider.of<IngredientProvider>(context, listen: false);
+    final isMissingItem = ingredient.statut.toLowerCase() == "missing";
 
-    final updatedIngredient = ingredient.copyWith(statut: "available");
-
-    final success = await provider.updateIngredient(
-      ingredient.id!,
-      updatedIngredient,
+    final quantityController = TextEditingController(
+      text: ingredient.quantite > 0 ? _formatQuantity(ingredient.quantite) : "",
     );
+    final typeController = TextEditingController(
+      text: ingredient.type.toLowerCase() == "shopping"
+          ? "Ingredient"
+          : ingredient.type,
+    );
+    final allowedUnits = [
+      "pcs",
+      "piece",
+      "g",
+      "kg",
+      "ml",
+      "L",
+      "pack",
+      "boite",
+      "gousse",
+    ];
 
-    if (success) {
-      await provider.fetchIngredients();
+    String selectedUnit = allowedUnits.contains(ingredient.unite)
+        ? ingredient.unite
+        : "pcs";
+    DateTime selectedDate = DateTime.now().add(const Duration(days: 7));
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("${ingredient.nom} marked as available")),
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 24,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          child: StatefulBuilder(
+            builder: (context, setModalState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Confirm purchase",
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  Text(
+                    ingredient.nom,
+                    style: const TextStyle(fontSize: 16, color: textLight),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  TextField(
+                    controller: quantityController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: "Quantity purchased",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  DropdownButtonFormField<String>(
+                    value: selectedUnit,
+                    decoration: const InputDecoration(
+                      labelText: "Unit",
+                      border: OutlineInputBorder(),
+                    ),
+                    items: allowedUnits
+                        .map(
+                          (unit) =>
+                              DropdownMenuItem(value: unit, child: Text(unit)),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      setModalState(() {
+                        selectedUnit = value!;
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  TextField(
+                    controller: typeController,
+                    decoration: const InputDecoration(
+                      labelText: "Inventory category",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: selectedDate,
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+
+                      if (pickedDate != null) {
+                        setModalState(() {
+                          selectedDate = pickedDate;
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.calendar_today),
+                    label: Text(
+                      "Expiration: ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}",
+                    ),
+                  ),
+
+                  const SizedBox(height: 22),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        final quantity = double.tryParse(
+                          quantityController.text.trim(),
+                        );
+
+                        if (quantity == null || quantity <= 0) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Please enter a valid quantity"),
+                            ),
+                          );
+                          return;
+                        }
+
+                        final inventoryQuantity = isMissingItem
+                            ? quantity
+                            : ingredient.quantite + quantity;
+                        final inventoryType = typeController.text.trim();
+
+                        if (inventoryType.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Please enter a category"),
+                            ),
+                          );
+                          return;
+                        }
+
+                        final updatedIngredient = ingredient.copyWith(
+                          quantite: inventoryQuantity,
+                          unite: selectedUnit,
+                          dateExpiration: selectedDate,
+                          type: inventoryType,
+                          statut: "disponible",
+                        );
+
+                        final success = await provider.updateIngredient(
+                          ingredient.id!,
+                          updatedIngredient,
+                        );
+
+                        if (success) {
+                          await provider.fetchIngredients();
+
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  "${ingredient.nom} added to inventory",
+                                ),
+                              ),
+                            );
+                          }
+                        } else {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  provider.errorMessage ?? "Update failed",
+                                ),
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryGreen,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: const Text("Confirm and add to inventory"),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         );
-      }
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(provider.errorMessage ?? "Update failed")),
-        );
-      }
-    }
+      },
+    );
   }
 
   Future<void> replaceExpiredItem(Ingredient ingredient) async {
@@ -104,12 +299,14 @@ class _ListPageState extends State<ListPage> {
     }
 
     final missingIngredients = ingredients.where((ingredient) {
-      return ingredient.statut.toLowerCase() == 'missing';
+      return ingredient.statut.toLowerCase() == 'missing' ||
+          ingredient.quantite <= 0;
     }).toList();
 
     final lowStockIngredients = ingredients.where((ingredient) {
       return !ingredient.isExpired &&
           ingredient.statut.toLowerCase() != "missing" &&
+          ingredient.quantite > 0 &&
           isLowStock(ingredient);
     }).toList();
 
@@ -364,10 +561,10 @@ class _ListPageState extends State<ListPage> {
                       return ShoppingItemCard(
                         name: ingredient.nom,
                         subtitle: ingredient.type ?? "Ingredient",
-                        quantity: "${ingredient.quantite} ${ingredient.unite}",
+                        quantity: "Missing",
                         isChecked: checkedItems.contains(ingredient.id),
                         onToggle: () async {
-                          await markAsAvailable(ingredient);
+                          showMarkAsAvailableForm(ingredient);
                         },
                       );
                     }).toList(),
@@ -394,7 +591,7 @@ class _ListPageState extends State<ListPage> {
                         isWarning: true,
                         isChecked: checkedItems.contains(ingredient.id),
                         onToggle: () async {
-                          await markAsAvailable(ingredient);
+                          showMarkAsAvailableForm(ingredient);
                         },
                       );
                     }).toList(),
@@ -430,9 +627,7 @@ class _ListPageState extends State<ListPage> {
 
             const SizedBox(height: 42),
 
-            const SuggestionCard(),
 
-            const SizedBox(height: 10),
           ],
         ),
       ),
@@ -644,95 +839,6 @@ class ShoppingItemCard extends StatelessWidget {
   }
 }
 
-class SuggestionCard extends StatelessWidget {
-  const SuggestionCard({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          height: 220,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            color: const Color(0xFF0F5D3B),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.10),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(28),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
-              color: const Color(0xFF0F5D3B).withOpacity(0.55),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Missing ingredients for\nTonight's Ratatouille?",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    height: 1.0,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                const Text(
-                  "SmartCook added 4 items to your\nlist.",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    height: 1.0,
-                  ),
-                ),
-
-                const Spacer(),
-
-                ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          "Suggestions feature will be connected later",
-                        ),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Color(0xFF0F5D3B),
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 22,
-                      vertical: 14,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                  ),
-                  child: const Text(
-                    "Review Suggestions",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 class EmptyShoppingMessage extends StatelessWidget {
   final String message;

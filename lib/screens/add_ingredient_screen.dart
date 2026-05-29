@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smartcook/providers/ingredient_provider.dart';
+import 'package:smartcook/providers/recipe_provider.dart';
 import 'package:smartcook/services/api_service.dart';
 import 'package:smartcook/services/image_service.dart';
 import '../widgets/custom_app_bar.dart';
@@ -27,6 +28,7 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
 
   Timer? _debounce;
   bool _isLoadingAI = false;
+  bool _isSaving = false;
 
    // Valeurs nutritionnelles récupérées de l'IA
   double _calories = 0, _proteins = 0, _carbs = 0, _fats = 0;
@@ -78,19 +80,29 @@ final data = await ApiService().analyzeIngredient(
 
 
   Future<void> _handleSave() async {
+    if (_isSaving) return;
+
     final nutri = Provider.of<IngredientProvider>(context, listen: false);
     final ingredientName = _nameController.text.trim();
 
-    if (nutri.imageUrl.isEmpty && ingredientName.isNotEmpty) {
-      await nutri.fetchNutrition(ingredientName, _selectedType);
-    }
+    setState(() => _isSaving = true);
 
-    final fallbackImageUrl = ImageService.getMealDbImage(
-      ingredientName,
-      _selectedType,
-    );
+    try {
+      if (nutri.imageUrl.isEmpty && ingredientName.isNotEmpty) {
+        await nutri.fetchNutrition(ingredientName, _selectedType);
+      }
 
-    final data = {
+      final fallbackImageUrl = ImageService.getMealDbImage(
+        ingredientName,
+        _selectedType,
+      );
+      final imageUrl = ImageService.resolveIngredientImage(
+        ingredientName,
+        _selectedType,
+        nutri.imageUrl,
+      );
+
+      final data = {
 
       //  ANCIEN CODE
 //"idInventaire": 1,
@@ -112,23 +124,38 @@ final data = await ApiService().analyzeIngredient(
       "allergenes": nutri.allergens,
       "marque": nutri.brand,
       "categorie": nutri.category,
-      "imageUrl": nutri.imageUrl.isNotEmpty ? nutri.imageUrl : fallbackImageUrl,
-    };
+      "imageUrl": imageUrl.isNotEmpty ? imageUrl : fallbackImageUrl,
+      };
 
-    bool success = await ApiService().saveIngredient(data);
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Ingrédient ajouté avec succès !"), backgroundColor: Colors.green)
-      );
-      if (widget.onSave != null) {
-        widget.onSave!();
-      }else{
+      bool success = await ApiService().saveIngredient(data);
+
+      if (!mounted) return;
+
+      if (success) {
+        unawaited(
+          Provider.of<RecipeProvider>(
+            context,
+            listen: false,
+          ).generateWithAi(),
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Ingredient added successfully!"), backgroundColor: Colors.green)
+        );
+        if (widget.onSave != null) {
+          widget.onSave!();
+        }else{
           Navigator.pop(context);
+        }
+      }else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Error while saving"), backgroundColor: Colors.red)
+        );
       }
-    }else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Erreur lors de la sauvegarde"), backgroundColor: Colors.red)
-      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
@@ -424,20 +451,39 @@ final data = await ApiService().analyzeIngredient(
                   ),
                   elevation: 0,
                 ),
-                onPressed:  _nameController.text.isEmpty ? null : _handleSave,
-                child: const Row(
+                onPressed: _nameController.text.isEmpty || _isSaving ? null : _handleSave,
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    if (_isSaving)
+                      const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    else
+                      const Text(
+                        "Save Ingredient",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    const SizedBox(width: 10),
                     Text(
-                      "Save Ingredient",
-                      style: TextStyle(
+                      _isSaving ? "Saving..." : "",
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 17,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    SizedBox(width: 10),
-                    Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                    if (!_isSaving)
+                      const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
                   ],
                 ),
               ),
@@ -528,9 +574,11 @@ final data = await ApiService().analyzeIngredient(
   Widget _buildIngredientImage() {
     final name = _nameController.text.trim();
     final nutriProvider = Provider.of<IngredientProvider>(context);
-    final imageUrl = nutriProvider.imageUrl.isNotEmpty
-        ? nutriProvider.imageUrl
-        : ImageService.getMealDbImage(name, _selectedType);
+    final imageUrl = ImageService.resolveIngredientImage(
+      name,
+      _selectedType,
+      nutriProvider.imageUrl,
+    );
 
     return Image.network(
       imageUrl,

@@ -13,6 +13,5 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log("========================================");
     console.log(`Serveur SmartCook lancé !`);
     console.log(`Local (PC) : http://localhost:${PORT}`);
-    console.log(`Émulateur Android : http://10.0.2.2:${PORT}`);
     console.log("========================================");
 });

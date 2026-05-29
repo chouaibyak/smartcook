@@ -3,8 +3,6 @@ import 'package:http/http.dart' as http;
 import '../utils/api_constants.dart';
 
 class ApiService {
-  static const String baseUrl = ApiConstants.aliments;
-
   // SINGLETON
   static final ApiService _instance = ApiService._internal();
 
@@ -35,7 +33,7 @@ class ApiService {
     String name,
     String type,
   ) async {
-    final uri = Uri.parse('$baseUrl/analyze').replace(
+    final uri = Uri.parse('${ApiConstants.aliments}/analyze').replace(
       queryParameters: {
         'name': name,
         'type': type,
@@ -80,7 +78,7 @@ class ApiService {
     print("HEADERS: ${_headers()}");
 
     final response = await http.post(
-      Uri.parse('$baseUrl/add'),
+      Uri.parse('${ApiConstants.aliments}/add'),
       headers: _headers(),
       body: json.encode(data),
     );

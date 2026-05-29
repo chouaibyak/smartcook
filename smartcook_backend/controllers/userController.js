@@ -8,7 +8,7 @@ exports.updateInitialProfile = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: "Profil complété avec succès !"
+            message: "Profile completed successfully!"
         });
 
     } catch (error) {
@@ -16,7 +16,7 @@ exports.updateInitialProfile = async (req, res) => {
 
         res.status(500).json({
             success: false,
-            error: "Erreur lors de la mise à jour du profil"
+            error: "Error while updating profile"
         });
     }
 };
@@ -26,15 +26,12 @@ exports.getProfile = async (req, res) => {
 
     try {
         const profile = await Profile.getByUserId(userId);
-
-        res.status(200).json(profile);
-
+        res.status(200).json(profile || {});
     } catch (error) {
         console.error("Get Profile Error:", error);
-
         res.status(500).json({
             success: false,
-            error: "Erreur lors de la récupération du profil"
+            error: "Error while loading profile"
         });
     }
 };

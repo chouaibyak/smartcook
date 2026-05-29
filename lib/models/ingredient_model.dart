@@ -41,9 +41,9 @@ class Ingredient {
   }
 
   String get statusText {
-    if (isExpired) return 'Expiré';
-    if (isExpiringSoon) return 'Expire bientôt';
-    return 'Disponible';
+    if (isExpired) return 'Expired';
+    if (isExpiringSoon) return 'Expiring soon';
+    return 'Available';
   }
 
   static int _toInt(dynamic value) {
@@ -63,13 +63,16 @@ class Ingredient {
   }
 
   factory Ingredient.fromJson(Map<String, dynamic> json) {
+    final quantity = _toDouble(json['quantite']);
+    final status = json['statut']?.toString() ?? 'disponible';
+
     return Ingredient(
       id: _toInt(json['id']),
       idInventaire: json['idInventaire'] == null
           ? null
           : _toInt(json['idInventaire']),
       nom: json['nom']?.toString() ?? '',
-      quantite: _toDouble(json['quantite']),
+      quantite: quantity,
       unite: json['unite'] ?? '',
       type: json['type'] ?? '',
       dateExpiration: _parseDate(json['dateExpiration']),
@@ -81,7 +84,7 @@ class Ingredient {
       lipides: json['lipides'] == null ? null : _toDouble(json['lipides']),
       barcode: json['barcode']?.toString(),
       imageUrl: json['imageUrl']?.toString(),
-      statut: json['statut'] ?? 'disponible',
+      statut: quantity <= 0 ? 'missing' : status,
     );
   }
 

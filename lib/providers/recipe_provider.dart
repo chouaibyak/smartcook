@@ -1,39 +1,122 @@
 import 'package:flutter/material.dart';
-
 import '../models/recipe_model.dart';
-import '../models/ingredient_model.dart';
 import '../services/recipe_service.dart';
 
-class RecipeProvider extends ChangeNotifier {
-  final RecipeService _service = RecipeService();
+class RecipeProvider with ChangeNotifier {
+  final RecipeService _recipeService = RecipeService();
 
-  List<Recipe> _suggestedRecipes = [];
+  List<Recipe> _recipes = [];
+  Map<String, dynamic>? _profile;
   bool _isLoading = false;
+  String? _errorMessage;
+  String? _token;
 
-  List<Recipe> get suggestedRecipes => _suggestedRecipes;
+  List<Recipe> get recipes => _recipes;
+  Map<String, dynamic>? get profile => _profile;
   bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+  Recipe? get firstSuggestedRecipe => _recipes.isNotEmpty ? _recipes.first : null;
 
-  Recipe? get firstSuggestedRecipe {
-    if (_suggestedRecipes.isEmpty) return null;
-    return _suggestedRecipes.first;
+  void setToken(String token) {
+    _token = token;
   }
 
-  void generateSuggestions(List<Ingredient> ingredients) {
+  Future<void> loadData([String? token]) async {
+    final activeToken = token ?? _token;
+    if (activeToken == null || activeToken.isEmpty) {
+      _errorMessage = "Missing token. Please log in again.";
+      notifyListeners();
+      return;
+    }
+
+    _token = activeToken;
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
-    _suggestedRecipes = _service.generateSuggestedRecipes(ingredients);
+    try {
+      final results = await Future.wait([
+        _recipeService.getRecipes(activeToken),
+        _recipeService.getProfile(activeToken),
+      ]);
 
-    _isLoading = false;
-    notifyListeners();
+      _recipes = results[0] as List<Recipe>;
+      _profile = results[1] as Map<String, dynamic>;
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
-  void clearSuggestions() {
-    _suggestedRecipes.clear();
+  Future<void> loadRecipes([String? token]) async {
+    final activeToken = token ?? _token;
+    if (activeToken == null || activeToken.isEmpty) return;
+
+    _token = activeToken;
+    _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
+
+    try {
+      _recipes = await _recipeService.getRecipes(activeToken);
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
-  String getRecipeImage(String recipeName) {
-  return _service.getRecipeImage(recipeName);
-}
+  Future<void> generateWithAi([String? token]) async {
+    final activeToken = token ?? _token;
+    if (activeToken == null || activeToken.isEmpty) {
+      _errorMessage = "Missing token. Please log in again.";
+      notifyListeners();
+      return;
+    }
+
+    _token = activeToken;
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _recipeService.refreshAiRecipes(activeToken);
+      _recipes = await _recipeService.getRecipes(activeToken);
+      _profile = await _recipeService.getProfile(activeToken);
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<Map<String, dynamic>?> prepareRecipe(int recipeId, [String? token]) async {
+    final activeToken = token ?? _token;
+    if (activeToken == null || activeToken.isEmpty) {
+      _errorMessage = "Missing token. Please log in again.";
+      notifyListeners();
+      return null;
+    }
+
+    _token = activeToken;
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final result = await _recipeService.prepareRecipe(activeToken, recipeId);
+      _recipes = await _recipeService.getRecipes(activeToken);
+      return result;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }

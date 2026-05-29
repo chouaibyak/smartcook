@@ -57,28 +57,33 @@ exports.analyzeIngredient = async (name, type) => {
 
     const nutriments = product.nutriments || {};
 
-    let allergenes = 'Non renseigné';
+    let allergenes = 'Non renseigne';
 
-if (!isNaturalType) {
-  allergenes =
-    product.allergens ||
-    product.allergens_tags?.join(', ') ||
-    'Non renseigné';
-}
+    if (!isNaturalType) {
+      allergenes =
+        product.allergens ||
+        product.allergens_tags?.join(', ') ||
+        'Non renseigne';
+    }
 
- if (allergenes === 'Non renseigné' && type === 'Seafood') {
-  allergenes = 'en:fish';
-}
+    if (allergenes === 'Non renseigne' && type === 'Seafood') {
+      allergenes = 'en:fish';
+    }
 
-if (allergenes === 'Non renseigné' && type === 'Dairy & Eggs') {
-  allergenes = 'en:milk/en:eggs';
-}
+    if (allergenes === 'Non renseigne' && type === 'Dairy & Eggs') {
+      allergenes = 'en:milk/en:eggs';
+    }
 
     const brandText = (product.brands || '').toLowerCase();
     const inputText = name.toLowerCase().trim();
+    const brandWords = brandText
+      .split(',')
+      .map(brand => brand.trim())
+      .filter(brand => brand.length > 0);
 
-    const isBrandProduct =
-      brandText && inputText.includes(brandText.split(',')[0].trim());
+    const isBrandProduct = brandWords.some(brand =>
+      inputText.includes(brand) || brand.includes(inputText)
+    );
 
     return {
       allergenes,
@@ -117,12 +122,10 @@ if (allergenes === 'Non renseigné' && type === 'Dairy & Eggs') {
           ? product.image_front_url || image || ''
           : image || ''
     };
-
   } catch (error) {
     console.error('Erreur OpenFoodFacts:', error.message);
 
     const image = await imageService.getFoodImage(name, type);
-
     let usdaNutrition = null;
 
     if (naturalTypes.includes(type)) {
@@ -139,7 +142,7 @@ function emptyResponse(type, image, usdaNutrition = null) {
     proteines: usdaNutrition ? usdaNutrition.proteines : 0,
     glucides: usdaNutrition ? usdaNutrition.glucides : 0,
     lipides: usdaNutrition ? usdaNutrition.lipides : 0,
-    allergenes: 'Non renseigné',
+    allergenes: 'Non renseigne',
     categorie: type || 'Inconnu',
     marque: 'Inconnu',
     imageUrl: image || ''

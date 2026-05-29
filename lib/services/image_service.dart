@@ -1,4 +1,26 @@
 class ImageService {
+  static bool isUsableImageUrl(String? url) {
+    final value = url?.trim() ?? '';
+    if (value.isEmpty) return false;
+
+    final lower = value.toLowerCase();
+    if (lower == 'null' || lower == 'undefined') return false;
+
+    final uri = Uri.tryParse(value);
+    return uri != null &&
+        (uri.scheme == 'http' || uri.scheme == 'https') &&
+        uri.host.isNotEmpty;
+  }
+
+  static String resolveIngredientImage(
+    String foodName,
+    String? type, [
+    String? imageUrl,
+  ]) {
+    final value = imageUrl?.trim();
+    return isUsableImageUrl(value) ? value! : getMealDbImage(foodName, type);
+  }
+
   static String _mealDbIngredientUrl(String ingredient) {
     return 'https://www.themealdb.com/images/ingredients/${Uri.encodeComponent(ingredient)}.png';
   }

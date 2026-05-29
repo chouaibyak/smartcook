@@ -16,7 +16,7 @@ class IngredientService {
 
   Map<String, String> _getHeaders() {
     if (_token == null || _token!.isEmpty) {
-      throw Exception('Token manquant. Veuillez vous reconnecter.');
+      throw Exception('Missing token. Please log in again.');
     }
     return {
       'Content-Type': 'application/json',
@@ -37,10 +37,10 @@ class IngredientService {
     }
 
     if (response.statusCode == 401) {
-      throw Exception('Session expirée. Veuillez vous reconnecter.');
+      throw Exception('Session expired. Please log in again.');
     }
 
-    throw Exception('Erreur chargement inventaire: ${response.statusCode}');
+    throw Exception('Error loading inventory: ${response.statusCode}');
   }
 
   // Version statique ou dictionnaire pour compatibilité directe avec ton écran de scan
@@ -120,8 +120,8 @@ class IngredientService {
       body: json.encode(ingredient.toJson()),
     );
 
-    if (response.statusCode != 201 && response.statusCode != 200) {
-      throw Exception('Erreur ajout aliment: ${response.statusCode}');
+    if (response.statusCode != 201) {
+      throw Exception('Error adding ingredient: ${response.statusCode}');
     }
   }
 
@@ -134,7 +134,7 @@ class IngredientService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Erreur mise à jour aliment: ${response.statusCode}');
+      throw Exception('Error updating ingredient: ${response.statusCode}');
     }
   }
 
@@ -155,7 +155,6 @@ class IngredientService {
     }
   }
 
-  // Supprimer un ingrédient (Instance pour l'équipe)
   Future<void> deleteIngredient(int id) async {
     final response = await http.delete(
       Uri.parse('${ApiConstants.inventory}/$id'),
@@ -163,7 +162,7 @@ class IngredientService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Erreur suppression aliment: ${response.statusCode}');
+      throw Exception('Error deleting ingredient: ${response.statusCode}');
     }
   }
 

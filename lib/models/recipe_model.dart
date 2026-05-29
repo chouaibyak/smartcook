@@ -1,3 +1,25 @@
+import 'dart:convert';
+
+class RecipeIngredient {
+  final String nom;
+  final double quantite;
+  final String unite;
+
+  const RecipeIngredient({
+    required this.nom,
+    required this.quantite,
+    required this.unite,
+  });
+
+  factory RecipeIngredient.fromJson(Map<String, dynamic> json) {
+    return RecipeIngredient(
+      nom: json['nom']?.toString() ?? '',
+      quantite: double.tryParse(json['quantite'].toString()) ?? 0,
+      unite: json['unite']?.toString() ?? '',
+    );
+  }
+}
+
 class Recipe {
   final int id;
   final int idUtilisateur;
@@ -6,6 +28,8 @@ class Recipe {
   final int tempsPreparation;
   final String difficulte;
   final int nbPersonnes;
+  final List<RecipeIngredient> ingredientsDisponibles;
+  final List<RecipeIngredient> ingredientsManquants;
   final String etapes;
   final double calories;
   final double proteines;
@@ -24,6 +48,8 @@ class Recipe {
     required this.tempsPreparation,
     required this.difficulte,
     required this.nbPersonnes,
+    this.ingredientsDisponibles = const [],
+    this.ingredientsManquants = const [],
     required this.etapes,
     required this.calories,
     required this.proteines,
@@ -40,10 +66,13 @@ class Recipe {
       id: json['id'],
       idUtilisateur: json['idUtilisateur'],
       nom: json['nom'] ?? '',
+      imageUrl: json['imageUrl'] ?? 'https://via.placeholder.com/600',
       typeRepas: json['typeRepas'] ?? '',
       tempsPreparation: json['tempsPreparation'] ?? 0,
       difficulte: json['difficulte'] ?? '',
       nbPersonnes: json['nbPersonnes'] ?? 1,
+      ingredientsDisponibles: _parseIngredients(json['ingredientsDisponibles']),
+      ingredientsManquants: _parseIngredients(json['ingredientsManquants']),
       etapes: json['etapes'] ?? '',
       calories: double.tryParse(json['calories'].toString()) ?? 0,
       proteines: double.tryParse(json['proteines'].toString()) ?? 0,
@@ -53,7 +82,30 @@ class Recipe {
       conseilsSante: json['conseilsSante'] ?? '',
       scoreCompatibilite:
           double.tryParse(json['scoreCompatibilite'].toString()) ?? 0,
-      imageUrl: json['imageUrl'],
     );
+  }
+
+  static List<RecipeIngredient> _parseIngredients(dynamic value) {
+    if (value == null) return [];
+
+    dynamic decoded = value;
+    if (value is String) {
+      if (value.trim().isEmpty) return [];
+      try {
+        decoded = jsonDecode(value);
+      } catch (_) {
+        return [];
+      }
+    }
+
+    if (decoded is! List) return [];
+
+    return decoded
+        .whereType<Map>()
+        .map((item) => RecipeIngredient.fromJson(
+              item.map((key, value) => MapEntry(key.toString(), value)),
+            ))
+        .where((ingredient) => ingredient.nom.trim().isNotEmpty)
+        .toList();
   }
 }

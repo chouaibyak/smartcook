@@ -58,9 +58,9 @@ final data = await _apiService.analyzeIngredient(name, type);
       fats = (data['lipides'] as num).toDouble();
 
       // Récupération des infos IA
-      category = data['categorie'] ?? "Inconnu";
+      category = data['categorie'] ?? "Unknown";
       allergens = data['allergenes'] ?? "Aucun";
-      brand = data['marque'] ?? "Générique";
+      brand = data['marque'] ?? "Generic";
       imageUrl = data['imageUrl'] ?? "";
       
     } catch (e) {
@@ -104,7 +104,8 @@ final data = await _apiService.analyzeIngredient(name, type);
 
   int get missingCount {
     return _ingredients.where((ingredient) {
-      return ingredient.statut.toLowerCase() == 'missing';
+      return ingredient.statut.toLowerCase() == 'missing' ||
+          ingredient.quantite <= 0;
     }).length;
   }
 
@@ -119,10 +120,11 @@ Future<void> fetchIngredients() async {
     _ingredients = await _service.getAllIngredients();
 
     for (var ingredient in _ingredients) {
-      if (ingredient.imageUrl == null || ingredient.imageUrl!.isEmpty) {
-        ingredient.imageUrl =
-            ImageService.getMealDbImage(ingredient.nom, ingredient.type);
-      }
+      ingredient.imageUrl = ImageService.resolveIngredientImage(
+        ingredient.nom,
+        ingredient.type,
+        ingredient.imageUrl,
+      );
     }
   } catch (e) {
     _errorMessage = e.toString();
@@ -138,10 +140,11 @@ Future<void> fetchIngredients() async {
     notifyListeners();
 
     try {
-      if (ingredient.imageUrl == null || ingredient.imageUrl!.isEmpty) {
-        ingredient.imageUrl =
-            ImageService.getMealDbImage(ingredient.nom, ingredient.type);
-      }
+      ingredient.imageUrl = ImageService.resolveIngredientImage(
+        ingredient.nom,
+        ingredient.type,
+        ingredient.imageUrl,
+      );
 
       await _service.addIngredient(ingredient);
       await fetchIngredients();

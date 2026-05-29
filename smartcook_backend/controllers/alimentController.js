@@ -14,7 +14,7 @@ exports.getNutritionInfo = async (req, res) => {
 const { name, type } = req.query;
     // 1. Validation simple
     if (!name || name.trim() === "") {
-      return res.status(400).json({ error: "Le nom de l'aliment est requis" });
+      return res.status(400).json({ error: "Ingredient name is required" });
     }
 
     // 2. Appel au service
@@ -22,7 +22,7 @@ const nutrition = await nutritionService.analyzeIngredient(name, type);
     // 3. Si le service a retourné une erreur 503 (gérée dans le service)
     if (nutrition.error) {
       return res.status(503).json({ 
-        message: "OpenFoodFacts est indisponible, mais vous pouvez entrer les infos manuellement.",
+        message: "OpenFoodFacts is unavailable, but you can enter the details manually.",
         details: nutrition.error 
       });
     }
@@ -33,7 +33,7 @@ const nutrition = await nutritionService.analyzeIngredient(name, type);
 
   } catch (error) {
     console.error("Erreur contrôleur nutrition:", error.message);
-    res.status(500).json({ error: "Impossible de récupérer les infos nutritionnelles" });
+    res.status(500).json({ error: "Unable to retrieve nutrition information" });
   }
 };
 
@@ -47,24 +47,24 @@ exports.saveAliment = async (req, res) => {
     console.log("DEBUG: Tentative de sauvegarde pour User ID :", userId);
 
     if (!userId || isNaN(userId)) {
-        return res.status(401).json({ error: "Utilisateur non authentifié (ID invalide)" });
+        return res.status(401).json({ error: "User is not authenticated (invalid ID)" });
     }
     
     // Validation minimale
     if (!data.nom) {
-      return res.status(400).json({ error: "Le nom est obligatoire pour sauvegarder" });
+      return res.status(400).json({ error: "Name is required to save" });
     }
 
     // Utilisation de await au lieu du callback
     const newId = await Aliment.create(userId, data);
     
     res.status(201).json({ 
-      message: "Ingrédient sauvegardé !", 
+      message: "Ingredient saved!",
       id: newId 
     });
 
   } catch (error) {
     console.error("Erreur sauvegarde aliment:", error);
-    res.status(500).json({ error: "Erreur lors de la sauvegarde en base de données" });
+    res.status(500).json({ error: "Error while saving to the database" });
   }
 };

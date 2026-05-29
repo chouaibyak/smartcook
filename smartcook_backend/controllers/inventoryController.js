@@ -21,29 +21,40 @@ const getAllIngredients = async (req, res) => {
         res.status(200).json(ingredients);
     } catch (error) {
         console.error("ERREUR GET INVENTORY:", error);
-        res.status(500).json({ message: 'Erreur serveur lors de la récupération', error: error.message });
+        res.status(500).json({ message: 'Server error while loading inventory', error: error.message });
     }
 };
 
-// ==========================================
-// 2. AJOUT D'UN INGRÉDIENT (Complet + Nutrition)
-// ==========================================
+
 const addIngredient = async (req, res) => {
-    try {
-        const userId = getUserId(req);
-        if (!userId) return res.status(401).json({ message: 'Non autorisé' });
+  try {
+    const { nom, quantite, unite, type, dateExpiration } = req.body;
 
-        const { nom } = req.body;
-        if (!nom) return res.status(400).json({ message: 'Le nom est obligatoire' });
-
-        // On passe directement tout le body au modèle corrigé pour sauvegarder tes champs (barcode, calories, etc.)
-        const id = await Aliment.create(userId, req.body);
-
-        res.status(201).json({ message: 'Aliment complet ajouté avec succès', id });
-    } catch (error) {
-        console.error("ADD INGREDIENT ERROR:", error);
-        res.status(500).json({ message: 'Erreur serveur lors de l\'ajout', error: error.message });
+    if (!nom || quantite === undefined || quantite === null || quantite === '' || !unite || !type) {
+      return res.status(400).json({
+        message: 'Name, quantity, unit, and type are required'
+      });
     }
+
+    //  NOUVEAU :
+    // conversion du userId en nombre entier
+    const userId = parseInt(req.userId);
+
+    //  Création aliment lié à l'utilisateur connecté
+    const id = await Aliment.create(userId, req.body);
+
+    res.status(201).json({
+      message: 'Ingredient added successfully',
+      id
+    });
+
+  } catch (error) {
+    console.error("ADD INGREDIENT ERROR:", error);
+
+    res.status(500).json({
+      message: 'Server error'
+    });
+  }
 };
 
 // ==========================================
@@ -54,26 +65,47 @@ const updateIngredient = async (req, res) => {
         const { id } = req.params;
         const userId = getUserId(req);
 
-        if (!userId) return res.status(401).json({ message: 'Non autorisé' });
+    //  NOUVEAU :
+    // vérifie si utilisateur connecté
+    if (!userId) {
+      return res.status(401).json({
+        message: 'Unauthorized'
+      });
+    }
 
-        const belongsToUser = await Aliment.belongsToUser(id, userId);
-        if (!belongsToUser) {
-            return res.status(403).json({ message: 'Cet aliment ne vous appartient pas ou n\'existe pas' });
-        }
+    //  Vérifie que l'aliment
+    // appartient bien à cet utilisateur
+    const belongsToUser = await Aliment.belongsToUser(id, userId);
+
+    // NOUVEAU :
+    // message plus précis et sécurisé
+    if (!belongsToUser) {
+      return res.status(403).json({
+        message: 'This ingredient does not belong to you'
+      });
+    }
 
         console.log("UPDATE PARAMS:", { id, userId });
 
         const updated = await Aliment.update(id, userId, req.body);
 
-        if (updated) {
-            res.status(200).json({ message: 'Aliment modifié avec succès' });
-        } else {
-            res.status(404).json({ message: 'Aliment non trouvé' });
-        }
-    } catch (error) {
-        console.error("UPDATE INGREDIENT ERROR:", error);
-        res.status(500).json({ message: 'Erreur serveur lors de la modification', error: error.message });
+    if (updated) {
+      res.json({
+        message: 'Ingredient updated successfully'
+      });
+    } else {
+      res.status(404).json({
+        message: 'Ingredient not found'
+      });
     }
+
+  } catch (error) {
+    console.error("UPDATE INGREDIENT ERROR:", error);
+
+    res.status(500).json({
+      message: 'Server error'
+    });
+  }
 };
 
 // ==========================================
@@ -84,31 +116,36 @@ const deleteIngredient = async (req, res) => {
         const { id } = req.params;
         const userId = getUserId(req);
 
-        if (!userId) return res.status(401).json({ message: 'Non autorisé' });
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
         const deleted = await Aliment.delete(id, userId);
 
-        if (deleted) {
-            res.status(200).json({ message: 'Aliment supprimé avec succès' });
-        } else {
-            res.status(404).json({ message: 'Aliment non trouvé' });
-        }
-    } catch (error) {
-        console.error("DELETE INGREDIENT ERROR:", error);
-        res.status(500).json({ message: 'Erreur serveur lors de la suppression', error: error.message });
+    if (deleted) {
+      res.json({
+        message: 'Ingredient deleted successfully'
+      });
+    } else {
+      res.status(404).json({
+        message: 'Ingredient not found'
+      });
     }
+
+  } catch (error) {
+    console.error("DELETE INGREDIENT ERROR:", error);
+
+    res.status(500).json({
+      message: 'Server error'
+    });
+  }
 };
 
-// Aliases d'exportation pour assurer une compatibilité totale (HEAD + main)
 module.exports = {
     getAllIngredients,
-    addIngredient,
-    updateIngredient,
-    deleteIngredient,
-    
-    // Gardés en alias pour tes endpoints Flutter actuels
     getInventory: getAllIngredients,
+    addIngredient,
     addItem: addIngredient,
+    updateIngredient,
     updateItem: updateIngredient,
-    deleteItem: deleteIngredient
+    deleteIngredient,
+    deleteItem: deleteIngredient,
 };
