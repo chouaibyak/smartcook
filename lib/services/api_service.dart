@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../utils/api_constants.dart';
 
 class ApiService {
-  static const String baseUrl = "http://localhost:3000/api/aliments";
+  static const String baseUrl = "${ApiConstants.baseUrl}/aliments";
 
   // SINGLETON
   static final ApiService _instance = ApiService._internal();

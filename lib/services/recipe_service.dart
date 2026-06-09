@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/recipe_model.dart';
+import '../utils/api_constants.dart';
 
 class RecipeService {
-  final String baseUrl = "http://localhost:3000/api";
+  final String baseUrl = ApiConstants.baseUrl;
 
   Map<String, String> _headers(String token) {
     return {

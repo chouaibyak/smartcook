@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/ingredient_model.dart';
+import '../utils/api_constants.dart';
 
 class IngredientService {
-static const String baseUrl = 'http://localhost:3000/api';
+static const String baseUrl = ApiConstants.baseUrl;
 
   static final IngredientService _instance = IngredientService._internal();
   factory IngredientService() => _instance;
