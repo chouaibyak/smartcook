@@ -7,7 +7,6 @@ import '../providers/recipe_provider.dart';
 import 'inventory_screen.dart';
 import 'add_ingredient_screen.dart';
 import 'barcode_scan_screen.dart';
-import 'ai_scan_screen.dart';
 import 'recipe_detail_screen.dart';
 import 'recipe_results_screen.dart';
 import 'shopping_list_screen.dart';
@@ -25,6 +24,7 @@ class HomeScreen extends StatefulWidget {
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
+
 class _HomeScreenState extends State<HomeScreen> {
   int currentIndex = 0;
 
@@ -37,7 +37,6 @@ class _HomeScreenState extends State<HomeScreen> {
     // Exécute le chargement des ingrédients
     // après l'initialisation complète du widget
     Future.microtask(() async {
-
       // Récupération du provider des ingrédients
       final ingredientProvider = Provider.of<IngredientProvider>(
         context,
@@ -65,10 +64,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Liste des pages utilisées dans IndexedStack
     pages = [
-
       // Index 0 → Home
       HomePage(
-
         // Données utilisateur reçues après login
         result: widget.result,
 
@@ -82,24 +79,19 @@ class _HomeScreenState extends State<HomeScreen> {
       // Index 2 → Barcode Scanner
       const ScanPage(),
 
-      // Index 3 → AI Scan
-      //const AiScanScreen(),
-
-      // Index 4 → Recipes
+      // Index 3 → Recipes
       RecipesPage(
         token: widget.result?['token']?.toString(),
         onNavigate: onTabTapped,
       ),
 
-      // Index 5 → Shopping List
+      // Index 4 → Shopping List
       const ListPage(),
 
-      // Index 6 → Add Ingredient
+      // Index 5 → Add Ingredient
       AddIngredientScreen(
-
         // Callback exécuté après sauvegarde
         onSave: () async {
-
           // Recharge les ingrédients
           // pour mettre à jour Inventory automatiquement
           await Provider.of<IngredientProvider>(
@@ -112,18 +104,14 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       ),
 
-      const AiScanScreen(),
-
-      ProfileScreen(
-        token: widget.result?['token']?.toString() ?? '',
-      ),
+      // Index 6 → Profile
+      ProfileScreen(token: widget.result?['token']?.toString() ?? ''),
     ];
   }
 
   // Fonction utilisée pour changer la page affichée
   void onTabTapped(int index) {
     setState(() {
-
       // Met à jour l'index courant
       currentIndex = index;
     });
@@ -134,21 +122,15 @@ class _HomeScreenState extends State<HomeScreen> {
     final bottomNavIndex = currentIndex <= 4 ? currentIndex : 0;
 
     return Scaffold(
-
       // Couleur de fond générale
       backgroundColor: const Color(0xFFF8F9FA),
 
       // AppBar personnalisée
-      appBar: CustomAppBar(
-        onProfileTap: () => onTabTapped(7),
-      ),
+      appBar: CustomAppBar(onProfileTap: () => onTabTapped(6)),
 
       // IndexedStack garde les pages en mémoire
       // contrairement à Navigator.push
-      body: IndexedStack(
-        index: currentIndex,
-        children: pages,
-      ),
+      body: IndexedStack(index: currentIndex, children: pages),
 
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFFFF9F43),
@@ -175,6 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
 class HomePage extends StatelessWidget {
   final Map<String, dynamic>? result;
   final Function(int) onNavigate;
@@ -286,31 +269,10 @@ class HomePage extends StatelessWidget {
                 child: QuickActionButton(
                   title: "Scan barcode",
                   icon: Icons.qr_code_scanner,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ScanPage(),
-                      ),
-                    );
-                  },
+                  onTap: () => onNavigate(2),
                 ),
               ),
             ],
-          ),
-
-          const SizedBox(height: 16),
-
-          QuickActionButton(
-            title: "AI Scan Fridge",
-            icon: Icons.auto_awesome,
-            isLarge: true,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AiScanScreen()),
-              );
-            },
           ),
 
           const SizedBox(height: 16),
@@ -331,12 +293,7 @@ class HomePage extends StatelessWidget {
                 child: QuickActionButton(
                   title: "Shopping list",
                   icon: Icons.list_alt,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ListPage()),
-                    );
-                  },
+                  onTap: () => onNavigate(4),
                 ),
               ),
             ],
@@ -750,7 +707,6 @@ class SuggestedRecipeCard extends StatelessWidget {
             ),
           ),
         ),
-
       ],
     );
   }
@@ -766,11 +722,7 @@ class RecipeImagePlaceholder extends StatelessWidget {
       width: double.infinity,
       color: const Color(0xFFEEEEEE),
       child: const Center(
-        child: Icon(
-          Icons.restaurant_menu,
-          size: 40,
-          color: Colors.grey,
-        ),
+        child: Icon(Icons.restaurant_menu, size: 40, color: Colors.grey),
       ),
     );
   }
