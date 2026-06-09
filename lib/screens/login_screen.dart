@@ -3,11 +3,9 @@ import 'package:provider/provider.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import 'register_screen.dart';
-import '../services/ingredient_service.dart';
 import '../providers/ingredient_provider.dart';
 import '../providers/auth_provider.dart';
 import 'home_screen.dart';
-import '../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -62,14 +60,14 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-     final ingredientProvider = Provider.of<IngredientProvider>(
-  context,
-  listen: false,
-);
+      final ingredientProvider = Provider.of<IngredientProvider>(
+        context,
+        listen: false,
+      );
 
-ingredientProvider.setToken(token);
-ingredientProvider.clearData();
-await ingredientProvider.fetchIngredients();
+      ingredientProvider.setToken(token);
+      ingredientProvider.clearData();
+      await ingredientProvider.fetchIngredients();
 
       if (!mounted) return;
 
@@ -86,7 +84,7 @@ await ingredientProvider.fetchIngredients();
         MaterialPageRoute(builder: (context) => HomeScreen(result: result)),
       );
     } else {
-      showMessage("Login failed", isError: true);
+      showMessage(authProvider.lastError ?? "Login failed", isError: true);
     }
   }
 

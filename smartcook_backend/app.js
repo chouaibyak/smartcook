@@ -9,6 +9,7 @@ const recipeRoutes = require('./routes/recipeRoutes');
 const shoppingRoutes = require('./routes/shoppingRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const alimentRoutes = require('./routes/alimentRoutes');
+const db = require('./config/db');
 
 const app = express();
 
@@ -40,6 +41,18 @@ app.use('/api/aliments', alimentRoutes);
 
 app.get('/', (req, res) => {
     res.send("SmartCook API is running...");
+});
+
+app.get('/test-db', async (req, res) => {
+    try {
+        await db.query('SELECT 1');
+        res.send("DB connected");
+    } catch (error) {
+        res.status(500).json({
+            message: "DB connection failed",
+            error: error.message || String(error)
+        });
+    }
 });
 
 app.use((err, req, res, next) => {

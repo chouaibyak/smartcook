@@ -7,14 +7,17 @@ import '../services/auth_service.dart';
 class AuthProvider with ChangeNotifier {
   UserModel? _user;
   bool _isLoading = false;
+  String? _lastError;
 
   UserModel? get user => _user;
   bool get isLoading => _isLoading;
   bool get isAuth => _user != null;
   String? get token => _user?.token;
+  String? get lastError => _lastError;
 
   Future<bool> login(String email, String password) async {
     _isLoading = true;
+    _lastError = null;
     notifyListeners();
 
     final result = await AuthService.login(email, password);
@@ -39,6 +42,7 @@ class AuthProvider with ChangeNotifier {
       return true;
     }
 
+    _lastError = result?['message']?.toString() ?? 'Login failed';
     notifyListeners();
     return false;
   }
