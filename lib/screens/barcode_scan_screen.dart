@@ -16,7 +16,6 @@ class _ScanPageState extends State<ScanPage> {
   static const Color _greenLight = Color(0xFFE8F5EE);
 
   // ── Variables d'état de la page ─────────────────────────────────
-  int _selectedTab = 0;
   bool _isLoading = false;
   bool _hasResult = false;
   String? _scannedBarcode;
@@ -95,7 +94,6 @@ class _ScanPageState extends State<ScanPage> {
     return SafeArea(
       child: Column(
         children: [
-          _buildTabSelector(),
           Expanded(
             child: SingleChildScrollView(
               child: Column(
@@ -116,63 +114,6 @@ class _ScanPageState extends State<ScanPage> {
     );
   }
 
-  Widget _buildTabSelector() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [_buildTab(0, 'Barcode'), _buildTab(1, 'AI Visual')],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTab(int index, String label) {
-    final isSelected = _selectedTab == index;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedTab = index),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.all(4),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(26),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 6,
-                      offset: const Offset(0, 1),
-                    ),
-                  ]
-                : [],
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: isSelected ? _green : Colors.grey[500],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildCameraBox() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -183,24 +124,11 @@ class _ScanPageState extends State<ScanPage> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              if (_selectedTab == 0)
-                MobileScanner(
-                  controller: _cameraController,
-                  onDetect: _onBarcodeDetected,
-                )
-              else
-                Container(
-                  color: Colors.black54,
-                  child: const Center(
-                    child: Text(
-                      'AI Visual — bientôt disponible',
-                      style: TextStyle(color: Colors.white70),
-                    ),
-                  ),
-                ),
-
-              if (_selectedTab == 0)
-                CustomPaint(painter: _ScannerOverlayPainter()),
+              MobileScanner(
+                controller: _cameraController,
+                onDetect: _onBarcodeDetected,
+              ),
+              CustomPaint(painter: _ScannerOverlayPainter()),
 
               Positioned(
                 bottom: 0,
@@ -274,19 +202,6 @@ class _ScanPageState extends State<ScanPage> {
                   iconColor: _green,
                   name: _productName,
                   subtitle: _productQty.isNotEmpty ? 'Qty: $_productQty' : null,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildResultCard(
-                  tag: 'AI VISION',
-                  tagColor: const Color(0xFFFFF0E8),
-                  tagTextColor: const Color(0xFFD85A30),
-                  icon: Icons.water_drop_outlined,
-                  iconColor: const Color(0xFFD85A30),
-                  name: 'Whole Milk',
-                  subtitle: 'Replace soon',
-                  subtitleColor: const Color(0xFFD85A30),
                 ),
               ),
             ],
