@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/auth_provider.dart';
 import '../providers/ingredient_provider.dart';
 import '../providers/recipe_provider.dart';
 
 import 'inventory_screen.dart';
 import 'add_ingredient_screen.dart';
 import 'barcode_scan_screen.dart';
-import 'ai_scan_screen.dart';
+import 'recipe_detail_screen.dart';
 import 'recipe_results_screen.dart';
 import 'shopping_list_screen.dart';
+import 'profile_screen.dart';
 
 import '../widgets/custom_app_bar.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
+import 'chatbot_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final Map<String, dynamic>? result;
@@ -23,6 +24,7 @@ class HomeScreen extends StatefulWidget {
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
+
 class _HomeScreenState extends State<HomeScreen> {
   int currentIndex = 0;
 
@@ -35,7 +37,6 @@ class _HomeScreenState extends State<HomeScreen> {
     // Exécute le chargement des ingrédients
     // après l'initialisation complète du widget
     Future.microtask(() async {
-
       // Récupération du provider des ingrédients
       final ingredientProvider = Provider.of<IngredientProvider>(
         context,
@@ -63,10 +64,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Liste des pages utilisées dans IndexedStack
     pages = [
-
       // Index 0 → Home
       HomePage(
-
         // Données utilisateur reçues après login
         result: widget.result,
 
@@ -78,26 +77,21 @@ class _HomeScreenState extends State<HomeScreen> {
       const InventoryPage(),
 
       // Index 2 → Barcode Scanner
-      const BarcodeScanScreen(),
+      const ScanPage(),
 
-      // Index 3 → AI Scan
-      //const AiScanScreen(),
-
-      // Index 4 → Recipes
+      // Index 3 → Recipes
       RecipesPage(
         token: widget.result?['token']?.toString(),
         onNavigate: onTabTapped,
       ),
 
-      // Index 5 → Shopping List
+      // Index 4 → Shopping List
       const ListPage(),
 
-      // Index 6 → Add Ingredient
+      // Index 5 → Add Ingredient
       AddIngredientScreen(
-
         // Callback exécuté après sauvegarde
         onSave: () async {
-
           // Recharge les ingrédients
           // pour mettre à jour Inventory automatiquement
           await Provider.of<IngredientProvider>(
@@ -109,13 +103,15 @@ class _HomeScreenState extends State<HomeScreen> {
           onTabTapped(1);
         },
       ),
+
+      // Index 6 → Profile
+      ProfileScreen(token: widget.result?['token']?.toString() ?? ''),
     ];
   }
 
   // Fonction utilisée pour changer la page affichée
   void onTabTapped(int index) {
     setState(() {
-
       // Met à jour l'index courant
       currentIndex = index;
     });
@@ -123,29 +119,45 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final bottomNavIndex = currentIndex <= 4 ? currentIndex : 0;
 
+    return Scaffold(
       // Couleur de fond générale
       backgroundColor: const Color(0xFFF8F9FA),
 
       // AppBar personnalisée
-      appBar: const CustomAppBar(),
+      appBar: CustomAppBar(onProfileTap: () => onTabTapped(6)),
 
       // IndexedStack garde les pages en mémoire
       // contrairement à Navigator.push
-      body: IndexedStack(
-        index: currentIndex,
-        children: pages,
+      body: IndexedStack(index: currentIndex, children: pages),
+
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFFFF9F43),
+        foregroundColor: const Color(0xFF5A2200),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ChatbotScreen(
+                token: widget.result?['token'],
+                selectedBottomNavIndex: bottomNavIndex,
+              ),
+            ),
+          );
+        },
+        child: const Icon(Icons.support_agent),
       ),
 
       // Bottom navigation bar
       bottomNavigationBar: CustomBottomNav(
-        currentIndex: currentIndex,
+        currentIndex: bottomNavIndex,
         onTap: onTabTapped,
       ),
     );
   }
 }
+
 class HomePage extends StatelessWidget {
   final Map<String, dynamic>? result;
   final Function(int) onNavigate;
@@ -226,7 +238,7 @@ class HomePage extends StatelessWidget {
                 child: HomeAlertCard(
                   title: "Missing",
                   number: "$missingCount",
-                  subtitle: "For tonight's Pasta",
+                  subtitle: "For this week's recipes",
                   icon: Icons.shopping_basket_outlined,
                   backgroundColor: const Color(0xFFFF9F43),
                   contentColor: const Color(0xFF5A2200),
@@ -257,31 +269,10 @@ class HomePage extends StatelessWidget {
                 child: QuickActionButton(
                   title: "Scan barcode",
                   icon: Icons.qr_code_scanner,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const BarcodeScanScreen(),
-                      ),
-                    );
-                  },
+                  onTap: () => onNavigate(2),
                 ),
               ),
             ],
-          ),
-
-          const SizedBox(height: 16),
-
-          QuickActionButton(
-            title: "AI Scan Fridge",
-            icon: Icons.auto_awesome,
-            isLarge: true,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AiScanScreen()),
-              );
-            },
           ),
 
           const SizedBox(height: 16),
@@ -302,12 +293,7 @@ class HomePage extends StatelessWidget {
                 child: QuickActionButton(
                   title: "Shopping list",
                   icon: Icons.list_alt,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ListPage()),
-                    );
-                  },
+                  onTap: () => onNavigate(4),
                 ),
               ),
             ],
@@ -330,8 +316,18 @@ class HomePage extends StatelessWidget {
               subtitle: suggestedRecipe.benefices,
               badge:
                   "${suggestedRecipe.difficulte} • ${suggestedRecipe.tempsPreparation} min",
-              imageUrl: suggestedRecipe.imageUrl,
-              onTap: () => onNavigate(3),
+              imageUrl: suggestedRecipe.imageUrl ?? '',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => RecipeDetailScreen(
+                      recipe: suggestedRecipe,
+                      onNavigate: onNavigate,
+                    ),
+                  ),
+                );
+              },
             ),
 
           const SizedBox(height: 40),
@@ -594,6 +590,8 @@ class SuggestedRecipeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasImage = imageUrl.trim().isNotEmpty;
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -620,26 +618,17 @@ class SuggestedRecipeCard extends StatelessWidget {
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(16),
                       ),
-                      child: Image.network(
-                        imageUrl,
-                        height: 160,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            height: 160,
-                            width: double.infinity,
-                            color: const Color(0xFFEEEEEE),
-                            child: const Center(
-                              child: Icon(
-                                Icons.image_not_supported,
-                                size: 40,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                      child: hasImage
+                          ? Image.network(
+                              imageUrl,
+                              height: 160,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const RecipeImagePlaceholder();
+                              },
+                            )
+                          : const RecipeImagePlaceholder(),
                     ),
 
                     Positioned(
@@ -718,32 +707,23 @@ class SuggestedRecipeCard extends StatelessWidget {
             ),
           ),
         ),
-
-        Positioned(
-          bottom: -55,
-          right: 20,
-          child: Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFF9F43),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFFF9F43).withOpacity(0.4),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.support_agent,
-              color: Color(0xFF5A2200),
-              size: 24,
-            ),
-          ),
-        ),
       ],
+    );
+  }
+}
+
+class RecipeImagePlaceholder extends StatelessWidget {
+  const RecipeImagePlaceholder({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 160,
+      width: double.infinity,
+      color: const Color(0xFFEEEEEE),
+      child: const Center(
+        child: Icon(Icons.restaurant_menu, size: 40, color: Colors.grey),
+      ),
     );
   }
 }

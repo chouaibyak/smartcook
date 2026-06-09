@@ -24,7 +24,6 @@ class Recipe {
   final int id;
   final int idUtilisateur;
   final String nom;
-  final String imageUrl;
   final String typeRepas;
   final int tempsPreparation;
   final String difficulte;
@@ -39,12 +38,12 @@ class Recipe {
   final String benefices;
   final String conseilsSante;
   final double scoreCompatibilite;
+  final String? imageUrl;
 
   Recipe({
     required this.id,
     required this.idUtilisateur,
     required this.nom,
-    required this.imageUrl,
     required this.typeRepas,
     required this.tempsPreparation,
     required this.difficulte,
@@ -59,6 +58,7 @@ class Recipe {
     required this.benefices,
     required this.conseilsSante,
     required this.scoreCompatibilite,
+    this.imageUrl,
   });
 
   factory Recipe.fromJson(Map<String, dynamic> json) {

@@ -68,7 +68,7 @@ class _RecipesPageState extends State<RecipesPage> {
               _buildMessageCard(provider.errorMessage!)
             else if (recipes.isEmpty)
               _buildMessageCard(
-                "Aucune recette disponible. Ajoutez au moins 2 aliments, puis genere une nouvelle liste.",
+                "No recipes available. Add at least 2 ingredients, then generate a new list.",
               )
             else
               ...recipes.map(
@@ -364,7 +364,7 @@ class _RecipesPageState extends State<RecipesPage> {
                   width: double.infinity,
                   height: 180,
                   child: Image.network(
-                    recipe.imageUrl,
+                    recipe.imageUrl ?? '',
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Container(
                       color: Colors.grey[200],

@@ -5,6 +5,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final String title;
   final bool centerTitle;
+  final VoidCallback? onProfileTap;
 
   const CustomAppBar({
     super.key,
@@ -12,6 +13,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.title = "SmartCook",
     this.centerTitle = true,
+    this.onProfileTap,
   });
 
   @override
@@ -19,17 +21,21 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
       centerTitle: centerTitle,
       leading: leading ??
-          Padding(
-            padding: const EdgeInsets.only(left: 16),
-            child: CircleAvatar(
-              radius: 18,
-              backgroundColor: Colors.grey.shade200,
-              child: const Icon(Icons.person, color: Colors.grey, size: 20),
+          GestureDetector(
+            onTap: onProfileTap,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 16),
+              child: CircleAvatar(
+                radius: 18,
+                backgroundColor: Colors.grey.shade200,
+                child: const Icon(Icons.person, color: Colors.grey, size: 20),
+              ),
             ),
           ),
       title: Text(
@@ -40,34 +46,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           fontSize: 18,
         ),
       ),
-      actions: actions ??
-          [
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(
-                    Icons.notifications_none,
-                    color: Colors.black87,
-                  ),
-                ),
-                Positioned(
-                  right: 12,
-                  top: 12,
-                  child: Container(
-                    height: 8,
-                    width: 8,
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(width: 8),
-          ],
+      actions: actions,
     );
   }
 }

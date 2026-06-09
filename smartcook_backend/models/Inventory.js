@@ -37,7 +37,7 @@ class Inventory {
   static async getOrCreate(userId) {
     try {
       const cleanId = parseInt(userId);
-      if (isNaN(cleanId)) throw new Error("ID Utilisateur invalide");
+      if (isNaN(cleanId)) throw new Error("Invalid user ID");
       let inventory = await this.findByUserId(cleanId);
 
       if (!inventory) {

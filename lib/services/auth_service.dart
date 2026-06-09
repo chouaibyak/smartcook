@@ -12,17 +12,15 @@ class AuthService {
         body: jsonEncode({'nom': nom, 'email': email, 'password': password}),
       );
 
-      print("STATUS: ${response.statusCode}");
-      print("BODY: ${response.body}");
+  
 
       return jsonDecode(response.body);
     } catch (e) {
-      print("REGISTER ERROR: $e");
+     
       return {'error': e.toString()};
     }
   }
 
-  // Connexion
 // Connexion
 static Future<Map<String, dynamic>?> login(String email, String password) async {
   try {
@@ -31,9 +29,7 @@ static Future<Map<String, dynamic>?> login(String email, String password) async 
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'email': email, 'password': password}),
     );
-    
-    print("LOGIN STATUS: ${response.statusCode}");
-    print("LOGIN BODY: ${response.body}");
+
     
     final data = jsonDecode(response.body);
     
@@ -43,7 +39,7 @@ static Future<Map<String, dynamic>?> login(String email, String password) async 
       return {'message': data['message'] ?? 'Login failed'};
     }
   } catch (e) {
-    print("LOGIN ERROR: $e");
+   
     return {'message': 'Network error'};
   }
 }
@@ -64,4 +60,39 @@ static Future<Map<String, dynamic>?> login(String email, String password) async 
       return false;
     }
   }
+
+
+static Future<Map<String, dynamic>?> getProfile(String token) async {
+  try {
+
+    final url =
+        "${ApiConstants.baseUrl}/user/profile";
+
+    print("PROFILE URL = $url");
+
+    final response = await http.get(
+      Uri.parse(url),
+
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+
+    return null;
+
+  } catch (e) {
+
+
+
+    return null;
+  }
+}
+
 }

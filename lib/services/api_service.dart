@@ -22,14 +22,28 @@ class ApiService {
   Map<String, String> _headers() {
     return {
       "Content-Type": "application/json",
-      if (_token != null)
-        "Authorization": "Bearer $_token",
+      if (_token != null) "Authorization": "Bearer $_token",
     };
   }
 
-  Future<Map<String, dynamic>> analyzeIngredient(String name) async {
+  double _toDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  Future<Map<String, dynamic>> analyzeIngredient(
+    String name,
+    String type,
+  ) async {
+    final uri = Uri.parse('${ApiConstants.aliments}/analyze').replace(
+      queryParameters: {
+        'name': name,
+        'type': type,
+      },
+    );
+
     final response = await http.get(
-      Uri.parse('$baseUrl/analyze?name=$name'),
+      uri,
       headers: _headers(),
     );
 
@@ -37,14 +51,28 @@ class ApiService {
     print("ANALYZE BODY: ${response.body}");
 
     if (response.statusCode == 200) {
-      return json.decode(response.body);
+      final data = json.decode(response.body) as Map<String, dynamic>;
+      return {
+        "calories": _toDouble(data["calories"]),
+        "proteines": _toDouble(data["proteines"]),
+        "glucides": _toDouble(data["glucides"]),
+        "lipides": _toDouble(data["lipides"]),
+        "allergenes": data["allergenes"]?.toString() ?? "Non renseigné",
+        "categorie": data["categorie"]?.toString() ?? type,
+        "marque": data["marque"]?.toString() ?? "Inconnu",
+        "imageUrl": data["imageUrl"]?.toString() ?? "",
+      };
     }
 
     return {
       "calories": 0,
       "proteines": 0,
       "glucides": 0,
-      "lipides": 0
+      "lipides": 0,
+      "allergenes": "Non renseigné",
+      "categorie": type,
+      "marque": "Inconnu",
+      "imageUrl": "",
     };
   }
 
@@ -52,7 +80,7 @@ class ApiService {
     print("HEADERS: ${_headers()}");
 
     final response = await http.post(
-      Uri.parse('$baseUrl/add'),
+      Uri.parse('${ApiConstants.aliments}/add'),
       headers: _headers(),
       body: json.encode(data),
     );

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smartcook/providers/ingredient_provider.dart';
+import 'package:smartcook/providers/recipe_provider.dart';
 import 'package:smartcook/services/api_service.dart';
+import 'package:smartcook/services/image_service.dart';
 import '../widgets/custom_app_bar.dart';
 import 'dart:async';
 
@@ -26,6 +28,7 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
 
   Timer? _debounce;
   bool _isLoadingAI = false;
+  bool _isSaving = false;
 
    // Valeurs nutritionnelles récupérées de l'IA
   double _calories = 0, _proteins = 0, _carbs = 0, _fats = 0;
@@ -33,34 +36,36 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
  
 
   @override
-void initState() {
-  super.initState();
+  void initState() {
+    super.initState();
 
-  print("INIT STATE RUNNING");
+    print("INIT STATE RUNNING");
 
-  _nameController.addListener(_onNameChanged);
-}
+    _nameController.addListener(_onNameChanged);
+  }
 
   void _onNameChanged() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    
+    Provider.of<IngredientProvider>(context, listen: false).resetNutrition();
+
     if (_nameController.text.isEmpty) {
-      Provider.of<IngredientProvider>(context, listen: false).resetNutrition();
       return;
     }
 
-    _debounce = Timer(const Duration(milliseconds: 800), () {
+    _debounce = Timer(const Duration(milliseconds: 1500), () {
       // Appelle le provider
       Provider.of<IngredientProvider>(context, listen: false)
-          .fetchNutrition(_nameController.text);
+          .fetchNutrition(_nameController.text, _selectedType);
     });
   }
 
   Future<void> _fetchNutritionAI(String name) async {
     setState(() => _isLoadingAI = true);
     try {
-      final data = await ApiService().analyzeIngredient(name);
-
+final data = await ApiService().analyzeIngredient(
+  name,
+  _selectedType,
+);
         print(data);
       setState(() {
         _calories = (data['calories'] as num).toDouble();
@@ -75,8 +80,29 @@ void initState() {
 
 
   Future<void> _handleSave() async {
+    if (_isSaving) return;
+
     final nutri = Provider.of<IngredientProvider>(context, listen: false);
-    final data = {
+    final ingredientName = _nameController.text.trim();
+
+    setState(() => _isSaving = true);
+
+    try {
+      if (nutri.imageUrl.isEmpty && ingredientName.isNotEmpty) {
+        await nutri.fetchNutrition(ingredientName, _selectedType);
+      }
+
+      final fallbackImageUrl = ImageService.getMealDbImage(
+        ingredientName,
+        _selectedType,
+      );
+      final imageUrl = ImageService.resolveIngredientImage(
+        ingredientName,
+        _selectedType,
+        nutri.imageUrl,
+      );
+
+      final data = {
 
       //  ANCIEN CODE
 //"idInventaire": 1,
@@ -86,7 +112,7 @@ void initState() {
 // req.userId depuis le JWT token
 
 
-      "nom": _nameController.text,
+      "nom": ingredientName,
       "quantite": double.tryParse(_qtyController.text) ?? 0,
       "unite": _selectedUnit,
       "type": _selectedType,
@@ -95,31 +121,47 @@ void initState() {
       "proteines": nutri.proteins,
       "glucides": nutri.carbs,
       "lipides": nutri.fats,
-      "allergenes": nutri.allergens, 
-      "marque": nutri.brand,         
-      "categorie": nutri.category,   
-      "imageUrl": nutri.imageUrl,     
-    };
+      "allergenes": nutri.allergens,
+      "marque": nutri.brand,
+      "categorie": nutri.category,
+      "imageUrl": imageUrl.isNotEmpty ? imageUrl : fallbackImageUrl,
+      };
 
-    bool success = await ApiService().saveIngredient(data);
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Ingrédient ajouté avec succès !"), backgroundColor: Colors.green)
-      );
-      if (widget.onSave != null) {
-        widget.onSave!();
-      }else{
+      bool success = await ApiService().saveIngredient(data);
+
+      if (!mounted) return;
+
+      if (success) {
+        unawaited(
+          Provider.of<RecipeProvider>(
+            context,
+            listen: false,
+          ).generateWithAi(),
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Ingredient added successfully!"), backgroundColor: Colors.green)
+        );
+        if (widget.onSave != null) {
+          widget.onSave!();
+        }else{
           Navigator.pop(context);
+        }
+      }else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Error while saving"), backgroundColor: Colors.red)
+        );
       }
-    }else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Erreur lors de la sauvegarde"), backgroundColor: Colors.red)
-      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _nameController.dispose();
     _qtyController.dispose();
     _expiryController.dispose();
@@ -206,10 +248,38 @@ void initState() {
 
                   _buildLabel("Ingredient Type"),
                   _buildDropdown(
-                    ['Vegetables', 'Fruits', 'Meat', 'Dairy', 'Grains', 'Spices'],
+                   [
+  'Vegetables',
+  'Fruits',
+  'Meat',
+  'Dairy & Eggs',
+  'Seafood',
+  'Grains',
+  'Bakery',
+  'Frozen',
+  'Snacks',
+  'Drinks',
+  'Spices',
+  'Organic',
+  'Canned Food',
+  'Sauces',
+  'Sweets',
+  'Breakfast',
+],
                     _selectedType,
-                    (v) => setState(() => _selectedType = v!),
-                  ),
+(v) {
+  setState(() => _selectedType = v!);
+
+  if (_nameController.text.trim().isNotEmpty) {
+    Provider.of<IngredientProvider>(
+      context,
+      listen: false,
+    ).fetchNutrition(
+      _nameController.text,
+      _selectedType,
+    );
+  }
+},                  ),
 
                   _buildLabel("Expiration Date"),
                   _buildTextField(
@@ -241,19 +311,7 @@ void initState() {
                     child: Stack(
                       alignment: Alignment.bottomLeft,
                       children: [
-                        Image.asset(
-                          'assets/images/VegetableInBow.jpg',
-                          height: 180,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            height: 180,
-                            color: const Color(0xFF2E7D32),
-                            child: const Center(
-                              child: Icon(Icons.image_not_supported, color: Colors.white54, size: 48),
-                            ),
-                          ),
-                        ),
+                        _buildIngredientImage(),
                         // Gradient overlay
                         Container(
                           height: 180,
@@ -393,20 +451,39 @@ void initState() {
                   ),
                   elevation: 0,
                 ),
-                onPressed:  _nameController.text.isEmpty ? null : _handleSave,
-                child: const Row(
+                onPressed: _nameController.text.isEmpty || _isSaving ? null : _handleSave,
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    if (_isSaving)
+                      const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    else
+                      const Text(
+                        "Save Ingredient",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    const SizedBox(width: 10),
                     Text(
-                      "Save Ingredient",
-                      style: TextStyle(
+                      _isSaving ? "Saving..." : "",
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 17,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    SizedBox(width: 10),
-                    Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                    if (!_isSaving)
+                      const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
                   ],
                 ),
               ),
@@ -489,6 +566,35 @@ void initState() {
               .map((e) => DropdownMenuItem(value: e, child: Text(e)))
               .toList(),
           onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIngredientImage() {
+    final name = _nameController.text.trim();
+    final nutriProvider = Provider.of<IngredientProvider>(context);
+    final imageUrl = ImageService.resolveIngredientImage(
+      name,
+      _selectedType,
+      nutriProvider.imageUrl,
+    );
+
+    return Image.network(
+      imageUrl,
+      height: 180,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => Container(
+        height: 180,
+        width: double.infinity,
+        color: const Color(0xFF2E7D32),
+        child: const Center(
+          child: Icon(
+            Icons.image_not_supported,
+            color: Colors.white54,
+            size: 48,
+          ),
         ),
       ),
     );

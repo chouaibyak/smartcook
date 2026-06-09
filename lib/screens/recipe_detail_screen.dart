@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smartcook/models/ingredient_model.dart';
 import 'package:smartcook/models/recipe_model.dart';
+import 'package:smartcook/providers/auth_provider.dart';
 import 'package:smartcook/providers/ingredient_provider.dart';
+import 'package:smartcook/providers/recipe_provider.dart';
+import 'package:smartcook/screens/chatbot_screen.dart';
 import 'package:smartcook/widgets/custom_app_bar.dart';
 import 'package:smartcook/widgets/custom_bottom_nav_bar.dart';
 
@@ -27,12 +30,12 @@ class RecipeDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final ingredients = context.watch<IngredientProvider>().ingredients;
     final steps = _parseSteps(recipe.etapes);
-    final pantry = recipe.ingredientsDisponibles.isNotEmpty
-        ? recipe.ingredientsDisponibles.map(_IngredientLine.fromRecipe).toList()
-        : _pantryIngredients(ingredients);
-    final missing = recipe.ingredientsManquants.isNotEmpty
-        ? recipe.ingredientsManquants.map(_IngredientLine.fromRecipe).toList()
-        : _missingIngredients(ingredients);
+    final pantry = recipe.ingredientsDisponibles
+        .map(_IngredientLine.fromRecipe)
+        .toList();
+    final missing = recipe.ingredientsManquants
+        .map(_IngredientLine.fromRecipe)
+        .toList();
     final readyPercent = _readyPercent(pantry.length, missing.length);
 
     return Scaffold(
@@ -73,6 +76,8 @@ class RecipeDetailScreen extends StatelessWidget {
                     readyPercent: readyPercent,
                   ),
                   const SizedBox(height: 18),
+                  _PrepareRecipeButton(recipe: recipe),
+                  const SizedBox(height: 18),
                   _StepsCard(steps: steps),
                   const SizedBox(height: 18),
                   const _SubstitutionCard(),
@@ -91,14 +96,14 @@ class RecipeDetailScreen extends StatelessWidget {
 
   List<_IngredientLine> _pantryIngredients(List<Ingredient> ingredients) {
     final used = _ingredientsUsedInRecipe(ingredients)
-        .where((i) => i.statut.toLowerCase() == 'disponible')
+        .where((i) => i.statut.toLowerCase() == 'disponible' && i.quantite > 0)
         .map(_IngredientLine.fromInventory)
         .toList();
 
     if (used.isNotEmpty) return used;
 
     return ingredients
-        .where((i) => i.statut.toLowerCase() == 'disponible')
+        .where((i) => i.statut.toLowerCase() == 'disponible' && i.quantite > 0)
         .map(_IngredientLine.fromInventory)
         .take(5)
         .toList();
@@ -106,14 +111,14 @@ class RecipeDetailScreen extends StatelessWidget {
 
   List<_IngredientLine> _missingIngredients(List<Ingredient> ingredients) {
     final usedMissing = _ingredientsUsedInRecipe(ingredients)
-        .where((i) => i.statut.toLowerCase() != 'disponible')
+        .where((i) => i.statut.toLowerCase() != 'disponible' || i.quantite <= 0)
         .map(_IngredientLine.fromInventory)
         .toList();
 
     if (usedMissing.isNotEmpty) return usedMissing;
 
     return ingredients
-        .where((i) => i.statut.toLowerCase() != 'disponible')
+        .where((i) => i.statut.toLowerCase() != 'disponible' || i.quantite <= 0)
         .map(_IngredientLine.fromInventory)
         .take(3)
         .toList();
@@ -161,7 +166,7 @@ class _HeroHeader extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           Image.network(
-            recipe.imageUrl,
+            recipe.imageUrl ?? '',
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) => Container(
               color: const Color(0xFFE5E5E0),
@@ -301,10 +306,23 @@ class _NutritionCard extends StatelessWidget {
             mainAxisSpacing: 12,
             childAspectRatio: 1.85,
             children: [
-              _NutritionCell(value: recipe.calories.toStringAsFixed(0), label: 'Calories'),
-              _NutritionCell(value: '${recipe.proteines.toStringAsFixed(0)}g', label: 'Protein', accent: _kOrange),
-              _NutritionCell(value: '${recipe.glucides.toStringAsFixed(0)}g', label: 'Carbs'),
-              _NutritionCell(value: '${recipe.lipides.toStringAsFixed(0)}g', label: 'Fat'),
+              _NutritionCell(
+                value: recipe.calories.toStringAsFixed(0),
+                label: 'Calories',
+              ),
+              _NutritionCell(
+                value: '${recipe.proteines.toStringAsFixed(0)}g',
+                label: 'Protein',
+                accent: _kOrange,
+              ),
+              _NutritionCell(
+                value: '${recipe.glucides.toStringAsFixed(0)}g',
+                label: 'Carbs',
+              ),
+              _NutritionCell(
+                value: '${recipe.lipides.toStringAsFixed(0)}g',
+                label: 'Fat',
+              ),
             ],
           ),
         ],
@@ -343,10 +361,7 @@ class _NutritionCell extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 5),
-          Text(
-            label,
-            style: const TextStyle(color: _kTextMuted, fontSize: 11),
-          ),
+          Text(label, style: const TextStyle(color: _kTextMuted, fontSize: 11)),
         ],
       ),
     );
@@ -396,19 +411,19 @@ class _IngredientsCard extends StatelessWidget {
             const SizedBox(height: 16),
             const _SectionLabel('IN PANTRY'),
             const SizedBox(height: 8),
-            ...pantry.map((ingredient) => _IngredientRow(
-                  ingredient: ingredient,
-                  available: true,
-                )),
+            ...pantry.map(
+              (ingredient) =>
+                  _IngredientRow(ingredient: ingredient, available: true),
+            ),
           ],
           if (missing.isNotEmpty) ...[
             const SizedBox(height: 14),
             const _SectionLabel('MISSING', color: _kOrange),
             const SizedBox(height: 8),
-            ...missing.map((ingredient) => _IngredientRow(
-                  ingredient: ingredient,
-                  available: false,
-                )),
+            ...missing.map(
+              (ingredient) =>
+                  _IngredientRow(ingredient: ingredient, available: false),
+            ),
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
@@ -474,10 +489,7 @@ class _IngredientRow extends StatelessWidget {
   final _IngredientLine ingredient;
   final bool available;
 
-  const _IngredientRow({
-    required this.ingredient,
-    required this.available,
-  });
+  const _IngredientRow({required this.ingredient, required this.available});
 
   @override
   Widget build(BuildContext context) {
@@ -519,6 +531,94 @@ class _IngredientRow extends StatelessWidget {
               style: TextStyle(color: _kTextMuted, fontSize: 11),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _PrepareRecipeButton extends StatefulWidget {
+  final Recipe recipe;
+
+  const _PrepareRecipeButton({required this.recipe});
+
+  @override
+  State<_PrepareRecipeButton> createState() => _PrepareRecipeButtonState();
+}
+
+class _PrepareRecipeButtonState extends State<_PrepareRecipeButton> {
+  bool _isPreparing = false;
+
+  Future<void> _prepareRecipe() async {
+    if (_isPreparing) return;
+
+    setState(() => _isPreparing = true);
+
+    final recipeProvider = context.read<RecipeProvider>();
+    final ingredientProvider = context.read<IngredientProvider>();
+
+    final result = await recipeProvider.prepareRecipe(widget.recipe.id);
+    await ingredientProvider.fetchIngredients();
+
+    if (!mounted) return;
+
+    setState(() => _isPreparing = false);
+
+    if (result == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            recipeProvider.errorMessage ??
+                "Unable to prepare this recipe right now.",
+          ),
+          backgroundColor: _kOrange,
+        ),
+      );
+      return;
+    }
+
+    final consumedCount = (result['consumed'] as List?)?.length ?? 0;
+    final missingCount = (result['missing'] as List?)?.length ?? 0;
+    final message = missingCount > 0
+        ? "Recipe prepared: $consumedCount ingredient(s) updated, $missingCount added to the list."
+        : "Recipe prepared: $consumedCount ingredient(s) deducted from inventory.";
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: _kDeepGreen),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _DetailCard(
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: _isPreparing ? null : _prepareRecipe,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _kPrimary,
+            foregroundColor: Colors.white,
+            disabledBackgroundColor: _kPrimary.withOpacity(0.45),
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(vertical: 15),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          icon: _isPreparing
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Icon(Icons.local_dining_outlined, size: 18),
+          label: Text(
+            _isPreparing ? 'Prepare' : 'Prepare this recipe',
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+        ),
       ),
     );
   }
@@ -692,7 +792,9 @@ class _StepImages extends StatelessWidget {
           .map(
             (url) => Expanded(
               child: Padding(
-                padding: EdgeInsets.only(right: url == visibleUrls.last ? 0 : 10),
+                padding: EdgeInsets.only(
+                  right: url == visibleUrls.last ? 0 : 10,
+                ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(7),
                   child: Image.network(
@@ -736,7 +838,11 @@ class _SubstitutionCard extends StatelessWidget {
               color: Colors.white.withOpacity(0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.smart_toy_outlined, color: Colors.white, size: 28),
+            child: const Icon(
+              Icons.smart_toy_outlined,
+              color: Colors.white,
+              size: 28,
+            ),
           ),
           const SizedBox(height: 16),
           const Text(
@@ -751,15 +857,21 @@ class _SubstitutionCard extends StatelessWidget {
           const Text(
             'Ask the AI Sous-Chef how to swap\ningredients or adjust for dietary needs.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              height: 1.35,
-            ),
+            style: TextStyle(color: Colors.white, fontSize: 12, height: 1.35),
           ),
           const SizedBox(height: 18),
           FilledButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChatbotScreen(
+                    token: context.read<AuthProvider>().token,
+                    selectedBottomNavIndex: 3,
+                  ),
+                ),
+              );
+            },
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFFDFF7EA),
               foregroundColor: _kDeepGreen,
@@ -855,19 +967,22 @@ List<_RecipeStep> _parseSteps(String rawSteps) {
 
 List<_RecipeStep> _parsePlainTextSteps(String raw) {
   final normalized = raw.replaceAll(RegExp(r'\r\n?'), '\n').trim();
-  final matches = RegExp(r'(?:^|\s)(\d+)[\).:-]\s+', multiLine: true)
-      .allMatches(normalized)
-      .toList();
+  final matches = RegExp(
+    r'(?:^|\s)(\d+)[\).:-]\s+',
+    multiLine: true,
+  ).allMatches(normalized).toList();
 
   if (matches.isNotEmpty) {
     return List.generate(matches.length, (index) {
-      final match = matches[index];
-      final nextStart = index + 1 < matches.length
-          ? matches[index + 1].start
-          : normalized.length;
-      final content = normalized.substring(match.end, nextStart).trim();
-      return _stepFromText(content, fallbackTitle: 'Step ${index + 1}');
-    }).where((step) => step.description.isNotEmpty || step.title.isNotEmpty).toList();
+          final match = matches[index];
+          final nextStart = index + 1 < matches.length
+              ? matches[index + 1].start
+              : normalized.length;
+          final content = normalized.substring(match.end, nextStart).trim();
+          return _stepFromText(content, fallbackTitle: 'Step ${index + 1}');
+        })
+        .where((step) => step.description.isNotEmpty || step.title.isNotEmpty)
+        .toList();
   }
 
   final chunks = normalized
@@ -879,7 +994,8 @@ List<_RecipeStep> _parsePlainTextSteps(String raw) {
   if (chunks.length > 1) {
     return List.generate(
       chunks.length,
-      (index) => _stepFromText(chunks[index], fallbackTitle: 'Step ${index + 1}'),
+      (index) =>
+          _stepFromText(chunks[index], fallbackTitle: 'Step ${index + 1}'),
     );
   }
 
@@ -900,7 +1016,9 @@ _RecipeStep _stepFromText(String text, {required String fallbackTitle}) {
     );
   }
 
-  final firstSentence = RegExp(r'^(.{12,70}?[.!?])\s+(.+)$').firstMatch(cleaned);
+  final firstSentence = RegExp(
+    r'^(.{12,70}?[.!?])\s+(.+)$',
+  ).firstMatch(cleaned);
   if (firstSentence != null) {
     return _RecipeStep(
       title: firstSentence.group(1)!.replaceAll(RegExp(r'[.!?]$'), ''),

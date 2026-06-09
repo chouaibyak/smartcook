@@ -1,42 +1,53 @@
 const db = require('../config/db');
 const Inventory = require('./Inventory');
 
+const toQuantity = (value, fallback = 0) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+};
+
+const statusForQuantity = (quantity, status) => {
+  if (toQuantity(quantity) <= 0) return 'missing';
+  return status || 'disponible';
+};
+
 class Aliment {
- 
-  
+
   static async create(userId, data) {
     try {
       // 1. Récupérer ou créer l'inventaire lié à l'utilisateur
       const inventory = await Inventory.getOrCreate(userId);
 
+      //  CORRIGÉ : Ajout de la colonne barcode dans le INSERT
       const query = `INSERT INTO aliment 
-        (idInventaire, nom, quantite, unite, type, dateExpiration, 
+        (idInventaire, nom, quantite, unite, type, dateExpiration, barcode,
          calories, proteines, glucides, lipides, allergenes, 
          marque, categorie, imageUrl, statut) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+      const quantity = toQuantity(data.quantite, 1);
 
       const values = [
         inventory.id, // On utilise l'ID trouvé juste au-dessus
-        data.nom || 'Inconnu',
-        data.quantite || 1,
+        data.nom || 'Unknown',
+        quantity,
         data.unite || 'pcs',
         data.type || 'autre',
         data.dateExpiration || null,
+        data.barcode || null, // ✅ Ajouté ici
         data.calories || 0,
         data.proteines || 0,
         data.glucides || 0,
         data.lipides || 0,
-        data.allergenes || 'Aucun',
-        data.marque || 'Générique',
-        data.categorie || 'Inconnu',
+        data.allergenes || 'Not provided',
+        data.marque || 'Generic',
+        data.categorie || 'Unknown',
         data.imageUrl || '',
-        data.statut || 'disponible'
+        statusForQuantity(quantity, data.statut)
       ];
 
-      // On utilise await (db doit être configuré avec .promise())
+      console.log("Insertion aliment :", values);
       const [result] = await db.query(query, values);
-      
-      return result.insertId; // Retourne l'ID de l'aliment créé
+      return result.insertId; 
 
     } catch (error) {
       console.error('Erreur dans Aliment.create:', error.message);
@@ -48,8 +59,7 @@ class Aliment {
   static async findAllByUser(userId) {
     try {
       const [rows] = await db.query(
-        `SELECT a.* 
-         FROM aliment a
+        `SELECT a.* FROM aliment a
          JOIN inventaire i ON a.idInventaire = i.id
          WHERE i.idUtilisateur = ?
          ORDER BY a.dateExpiration ASC`,
@@ -66,8 +76,7 @@ class Aliment {
   static async findById(id, userId) {
     try {
       const [rows] = await db.query(
-        `SELECT a.* 
-         FROM aliment a
+        `SELECT a.* FROM aliment a
          JOIN inventaire i ON a.idInventaire = i.id
          WHERE a.id = ? AND i.idUtilisateur = ?`,
         [id, userId]
@@ -88,6 +97,10 @@ class Aliment {
         allergenes, marque, categorie, barcode, imageUrl, statut
       } = data;
 
+      const formattedDate = dateExpiration
+        ? dateExpiration.split('T')[0]
+        : null;
+
       const [result] = await db.query(
         `UPDATE aliment a
          JOIN inventaire i ON a.idInventaire = i.id
@@ -99,10 +112,10 @@ class Aliment {
            a.imageUrl = ?, a.statut = ?
          WHERE a.id = ? AND i.idUtilisateur = ?`,
         [
-          nom, quantite, unite, type, dateExpiration,
+          nom, quantite, unite, type, formattedDate,
           calories || 0, proteines || 0, glucides || 0, lipides || 0,
-          allergenes || 'Aucun', marque || 'Générique', categorie || 'Inconnu',
-          barcode || null, imageUrl || '', statut || 'disponible',
+          allergenes || 'None', marque || 'Generic', categorie || 'Unknown',
+          barcode || null, imageUrl || '', statusForQuantity(quantite, statut),
           id, userId
         ]
       );
@@ -136,7 +149,7 @@ class Aliment {
         `SELECT a.id FROM aliment a
          JOIN inventaire i ON a.idInventaire = i.id
          WHERE a.id = ? AND i.idUtilisateur = ?`,
-        [id, userId]
+         [id, userId]
       );
       return rows.length > 0;
     } catch (error) {

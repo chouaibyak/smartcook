@@ -150,7 +150,14 @@ exports.generateRecipeImage = async (recipe, req, index) => {
 
     await fs.mkdir(imagesDir, { recursive: true });
 
-    const image = await findRealRecipeImage(recipe, index);
+    let image;
+    try {
+        image = await findRealRecipeImage(recipe, index);
+    } catch (error) {
+        console.error(`Image fallback pour "${recipe.nom}":`, error.message);
+        return "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=900&q=80";
+    }
+
     const ext = imageExtension(image.mimeType);
     const fileName = `${slugify(visualKeyword)}-${index}-${Date.now()}.${ext}`;
     const filePath = path.join(imagesDir, fileName);

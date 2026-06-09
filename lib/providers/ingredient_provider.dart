@@ -18,7 +18,14 @@ class IngredientProvider with ChangeNotifier {
   String category = "", allergens = "", brand = "", imageUrl = "";
 
   void resetNutrition() {
-    calories = 0; proteins = 0; carbs = 0; fats = 0;
+    calories = 0;
+    proteins = 0;
+    carbs = 0;
+    fats = 0;
+    category = "";
+    allergens = "";
+    brand = "";
+    imageUrl = "";
     notifyListeners();
   }
 
@@ -40,21 +47,20 @@ class IngredientProvider with ChangeNotifier {
   notifyListeners();
 }
 
-  Future<void> fetchNutrition(String name) async {
-    _isLoading = true;
+Future<void> fetchNutrition(String name, String type) async {    _isLoading = true;
     notifyListeners();
 
     try {
-      final data = await _apiService.analyzeIngredient(name);
+final data = await _apiService.analyzeIngredient(name, type);
       calories = (data['calories'] as num).toDouble();
       proteins = (data['proteines'] as num).toDouble();
       carbs = (data['glucides'] as num).toDouble();
       fats = (data['lipides'] as num).toDouble();
 
       // Récupération des infos IA
-      category = data['categorie'] ?? "Inconnu";
+      category = data['categorie'] ?? "Unknown";
       allergens = data['allergenes'] ?? "Aucun";
-      brand = data['marque'] ?? "Générique";
+      brand = data['marque'] ?? "Generic";
       imageUrl = data['imageUrl'] ?? "";
       
     } catch (e) {
@@ -98,32 +104,35 @@ class IngredientProvider with ChangeNotifier {
 
   int get missingCount {
     return _ingredients.where((ingredient) {
-      return ingredient.statut.toLowerCase() == 'missing';
+      return ingredient.statut.toLowerCase() == 'missing' ||
+          ingredient.quantite <= 0;
     }).length;
   }
 
   // -------- CRUD --------
 
-  Future<void> fetchIngredients() async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
+Future<void> fetchIngredients() async {
+  _isLoading = true;
+  _errorMessage = null;
+  notifyListeners();
 
-    try {
-      _ingredients = await _service.getAllIngredients();
+  try {
+    _ingredients = await _service.getAllIngredients();
 
-      for (var ingredient in _ingredients) {
-        if (ingredient.imageUrl == null || ingredient.imageUrl!.isEmpty) {
-          ingredient.imageUrl = ImageService.getMealDbImage(ingredient.nom);
-        }
-      }
-    } catch (e) {
-      _errorMessage = e.toString();
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+    for (var ingredient in _ingredients) {
+      ingredient.imageUrl = ImageService.resolveIngredientImage(
+        ingredient.nom,
+        ingredient.type,
+        ingredient.imageUrl,
+      );
     }
+  } catch (e) {
+    _errorMessage = e.toString();
+  } finally {
+    _isLoading = false;
+    notifyListeners();
   }
+}
 
   Future<bool> addIngredient(Ingredient ingredient) async {
     _isLoading = true;
@@ -131,9 +140,11 @@ class IngredientProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      if (ingredient.imageUrl == null || ingredient.imageUrl!.isEmpty) {
-        ingredient.imageUrl = ImageService.getMealDbImage(ingredient.nom);
-      }
+      ingredient.imageUrl = ImageService.resolveIngredientImage(
+        ingredient.nom,
+        ingredient.type,
+        ingredient.imageUrl,
+      );
 
       await _service.addIngredient(ingredient);
       await fetchIngredients();
@@ -201,4 +212,10 @@ class IngredientProvider with ChangeNotifier {
 
     return grouped;
   }
+
+
+  void setToken(String token) {
+  _service.setToken(token);
+  _apiService.setToken(token);
+}
 }

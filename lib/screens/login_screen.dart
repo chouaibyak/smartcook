@@ -3,12 +3,11 @@ import 'package:provider/provider.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import 'register_screen.dart';
-import '../services/auth_service.dart';
 import '../services/ingredient_service.dart';
 import '../providers/ingredient_provider.dart';
+import '../providers/auth_provider.dart';
 import 'home_screen.dart';
 import '../services/api_service.dart';
-
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -24,7 +23,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final passwordController = TextEditingController();
 
   bool rememberMe = false;
-  bool isLoading = false;
   bool obscurePassword = true;
 
   void showMessage(String message, {bool isError = false}) {
@@ -50,53 +48,45 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    setState(() => isLoading = true);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.login(email, password);
 
-    // Appel backend
-    final result = await AuthService.login(email, password);
+    if (!mounted) return;
 
-    setState(() => isLoading = false);
+    if (success) {
+      final user = authProvider.user;
+      final token = authProvider.token;
 
-    if (result != null && result.containsKey('token')) {
-      final token = result['token'];
-      
-    
-      
-      
+      if (token == null || token.isEmpty) {
+        showMessage("Token introuvable", isError: true);
+        return;
+      }
 
-      print("LOGIN RESULT: $result");
-print("USER FROM LOGIN: ${result['user']}");
-print("TOKEN FROM LOGIN: ${result['token']}");
-
-  final ingredientService = IngredientService();
-  ingredientService.setToken(token);
-
-  //  CHANGEMENT 2 : création dyal ApiService
-  final apiService = ApiService();
-
-  //  CHANGEMENT 3 : stockage dyal token f ApiService
-  // bach les autres requêtes API yقدرو يستعملو نفس token
-  apiService.setToken(token);
-      
-
-      final ingredientProvider = Provider.of<IngredientProvider>(
+     final ingredientProvider = Provider.of<IngredientProvider>(
   context,
   listen: false,
 );
 
+ingredientProvider.setToken(token);
 ingredientProvider.clearData();
-
 await ingredientProvider.fetchIngredients();
-     
-      
-      showMessage("Login success! Welcome ${result['user']?['nom'] ?? ''}");
-      
+
+      if (!mounted) return;
+
+      showMessage("Login success! Welcome ${user?.nom ?? ''}");
+
+      final result = {
+        'token': token,
+        'user': user?.toJson(),
+      };
+
+      // Navigation vers HomeScreen en passant le résultat au besoin
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => HomeScreen(result : result )),
+        MaterialPageRoute(builder: (context) => HomeScreen(result: result)),
       );
     } else {
-      showMessage(result?['message'] ?? "Login failed", isError: true);
+      showMessage("Login failed", isError: true);
     }
   }
 
@@ -120,10 +110,7 @@ await ingredientProvider.fetchIngredients();
           children: [
             Icon(icon, size: 22),
             const SizedBox(width: 10),
-            Text(
-              text,
-              style: const TextStyle(fontSize: 18),
-            ),
+            Text(text, style: const TextStyle(fontSize: 18)),
           ],
         ),
       ),
@@ -132,6 +119,8 @@ await ingredientProvider.fetchIngredients();
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAF8),
       body: SafeArea(
@@ -216,10 +205,7 @@ await ingredientProvider.fetchIngredients();
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        "Password",
-                        style: TextStyle(fontSize: 19),
-                      ),
+                      const Text("Password", style: TextStyle(fontSize: 19)),
                       Text(
                         "Forgot?",
                         style: TextStyle(
@@ -261,16 +247,11 @@ await ingredientProvider.fetchIngredients();
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFB5C3B8),
-                        ),
+                        borderSide: const BorderSide(color: Color(0xFFB5C3B8)),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(
-                          color: green,
-                          width: 1.5,
-                        ),
+                        borderSide: BorderSide(color: green, width: 1.5),
                       ),
                     ),
                   ),
@@ -302,7 +283,7 @@ await ingredientProvider.fetchIngredients();
 
                   CustomButton(
                     text: "Login",
-                    isLoading: isLoading,
+                    isLoading: authProvider.isLoading,
                     onPressed: validateLogin,
                   ),
 

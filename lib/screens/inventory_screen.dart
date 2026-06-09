@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/ingredient_provider.dart';
 import '../providers/recipe_provider.dart';
 import '../models/ingredient_model.dart';
+import '../services/image_service.dart';
 import 'add_ingredient_screen.dart';
 
 class InventoryPage extends StatefulWidget {
@@ -55,9 +56,9 @@ class _InventoryPageState extends State<InventoryPage> {
     final provider = Provider.of<IngredientProvider>(context);
     final grouped = _groupByCategory(provider.ingredients);
 
-    return Container(
-      color: Colors.grey[50],
-      child: SafeArea(
+   return Material(
+  color: Colors.grey[50],
+  child: SafeArea(
         child: Column(
           children: [
             const SizedBox(height: 10),
@@ -246,6 +247,12 @@ const SizedBox(height: 16),
     );
   }
 Widget _buildCard(Ingredient ingredient) {
+  final imageUrl = ImageService.resolveIngredientImage(
+    ingredient.nom,
+    ingredient.type,
+    ingredient.imageUrl,
+  );
+
   return Container(
     margin: const EdgeInsets.only(bottom: 18),
     decoration: BoxDecoration(
@@ -276,20 +283,14 @@ Widget _buildCard(Ingredient ingredient) {
               child: ingredient.imageUrl != null &&
                       ingredient.imageUrl!.isNotEmpty
                   ? CachedNetworkImage(
-                      imageUrl: ingredient.imageUrl!,
+                      imageUrl: imageUrl,
                       height: 140,
                       width: double.infinity,
                       fit: BoxFit.cover,
+                      errorWidget: (context, url, error) =>
+                          _buildImageFallback(ingredient),
                     )
-                  : Container(
-                      height: 140,
-                      width: double.infinity,
-                      color: Colors.grey[200],
-                      child: const Icon(
-                        Icons.image,
-                        size: 40,
-                      ),
-                    ),
+                  : _buildImageFallback(ingredient),
             ),
 
             Positioned(
@@ -385,33 +386,25 @@ Widget _buildCard(Ingredient ingredient) {
   );
 }
 
+Widget _buildImageFallback(Ingredient ingredient) {
+  final fallbackUrl = ImageService.getMealDbImage(ingredient.nom, ingredient.type);
 
-
-
-void _showIngredientDetails(Ingredient ingredient) {
-  showDialog(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: Text(ingredient.nom),
-   content: Text(
-  "Quantity: ${ingredient.quantite} ${ingredient.unite}\n"
-  "Category: ${ingredient.type}\n"
-  "Expiration: ${ingredient.dateExpiration.day}/${ingredient.dateExpiration.month}/${ingredient.dateExpiration.year}\n"
-  "Calories: ${ingredient.calories ?? '-'}\n"
-  "Proteins: ${ingredient.proteines ?? '-'}\n"
-  "Carbs: ${ingredient.glucides ?? '-'}\n"
-  "Fats: ${ingredient.lipides ?? '-'}",
-),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text("Close"),
-        ),
-      ],
+  return CachedNetworkImage(
+    imageUrl: fallbackUrl,
+    height: 140,
+    width: double.infinity,
+    fit: BoxFit.cover,
+    errorWidget: (context, url, error) => Container(
+      height: 140,
+      width: double.infinity,
+      color: Colors.grey[200],
+      child: const Icon(
+        Icons.image,
+        size: 40,
+      ),
     ),
   );
 }
-
 
 
 void _confirmDelete(Ingredient ingredient) {
@@ -513,7 +506,10 @@ Widget _buildStatusChip(Ingredient ingredient) {
   ) {
     final Map<String, List<Ingredient>> grouped = {};
 
-    List<Ingredient> filtered = ingredients;
+    List<Ingredient> filtered = ingredients.where((ingredient) {
+      return ingredient.statut.toLowerCase() != 'missing' &&
+          ingredient.quantite > 0;
+    }).toList();
 
     if (_searchQuery.isNotEmpty) {
       filtered = filtered.where((i) {

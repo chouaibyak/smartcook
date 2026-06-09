@@ -9,7 +9,7 @@ exports.register = async (req, res) => {
         // 1. Vérifier si l'utilisateur existe déjà via le modèle
         const existingUser = await User.findByEmail(email);
         if (existingUser) {
-            return res.status(400).json({ message: "Email déjà utilisé" });
+            return res.status(400).json({ message: "Email already in use" });
         }
 
         // 2. Sécurité : Hasher le mot de passe
@@ -29,7 +29,7 @@ exports.register = async (req, res) => {
 
         // 7. Réponse (Formatée pour ton UserModel.dart)
         res.status(201).json({
-            message: "Utilisateur créé avec succès",
+            message: "User created successfully",
             token: token,
             user: { id: userId, nom, email }
         });
@@ -46,13 +46,13 @@ exports.login = async (req, res) => {
         // 1. Chercher l'utilisateur via le modèle
         const user = await User.findByEmail(email);
         if (!user) {
-            return res.status(404).json({ message: "Utilisateur non trouvé" });
+            return res.status(404).json({ message: "User not found" });
         }
 
         // 2. Vérifier le mot de passe
         const isMatch = await bcrypt.compare(password, user.motDePasse);
         if (!isMatch) {
-            return res.status(400).json({ message: "Mot de passe incorrect" });
+            return res.status(400).json({ message: "Incorrect password" });
         }
 
         // 3. Générer un nouveau Token

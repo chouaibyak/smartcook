@@ -24,7 +24,7 @@ class RecipeProvider with ChangeNotifier {
   Future<void> loadData([String? token]) async {
     final activeToken = token ?? _token;
     if (activeToken == null || activeToken.isEmpty) {
-      _errorMessage = "Token manquant. Veuillez vous reconnecter.";
+      _errorMessage = "Missing token. Please log in again.";
       notifyListeners();
       return;
     }
@@ -72,7 +72,7 @@ class RecipeProvider with ChangeNotifier {
   Future<void> generateWithAi([String? token]) async {
     final activeToken = token ?? _token;
     if (activeToken == null || activeToken.isEmpty) {
-      _errorMessage = "Token manquant. Veuillez vous reconnecter.";
+      _errorMessage = "Missing token. Please log in again.";
       notifyListeners();
       return;
     }
@@ -88,6 +88,32 @@ class RecipeProvider with ChangeNotifier {
       _profile = await _recipeService.getProfile(activeToken);
     } catch (e) {
       _errorMessage = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<Map<String, dynamic>?> prepareRecipe(int recipeId, [String? token]) async {
+    final activeToken = token ?? _token;
+    if (activeToken == null || activeToken.isEmpty) {
+      _errorMessage = "Missing token. Please log in again.";
+      notifyListeners();
+      return null;
+    }
+
+    _token = activeToken;
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final result = await _recipeService.prepareRecipe(activeToken, recipeId);
+      _recipes = await _recipeService.getRecipes(activeToken);
+      return result;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return null;
     } finally {
       _isLoading = false;
       notifyListeners();
