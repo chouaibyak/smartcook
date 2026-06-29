@@ -532,12 +532,6 @@ Its main objective is to provide a modern, practical, and intelligent cooking as
 
 ---
 
-## Author
-
-**Your Name**
-
----
-
 ## License
 
 This project was developed as part of an academic project.
